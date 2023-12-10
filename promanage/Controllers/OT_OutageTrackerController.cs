@@ -28,6 +28,17 @@ namespace ActionTrakingSystem.Controllers
         {
             try
             {
+                var userData = await (from a in _context.Sites.Where(a => a.siteId == reg.action.siteId)
+                                      join c in _context.AUSite.Where(a => a.isDeleted == 0) on a.siteId equals c.siteId
+                                      join d in _context.AppUser.Where(a => a.isDeleted == 0) on c.userId equals d.userId
+                                      join z in _context.OT_IActionOwnerUser on d.userId equals z.userId
+                                      join b in _context.OT_PhaseReadinessDescriptionAO.Where(a => a.phaseReadId == reg.action.phaseReadId) on z.actionOwnerId equals b.actionOwnerId
+                                      select new
+                                      {
+                                          d.userId,
+                                          d.userName,
+                                          name = d.firstName + " " + d.lastName,
+                                      }).Distinct().ToListAsync();
                 var outageData = await (from a in _context.OT_PhaseOutageTrackerProgress.Where(a => a.potId == reg.action.potId && a.monthId == reg.action.startDate.Month && a.yearId == reg.action.startDate.Year)
                                         select new
                                         {
@@ -60,7 +71,8 @@ namespace ActionTrakingSystem.Controllers
                 var obj = new
                 {
                     outageData,
-                    monthList
+                    monthList,
+                    userData
                 };
                 return Ok(obj);
             }
@@ -69,6 +81,7 @@ namespace ActionTrakingSystem.Controllers
                 return BadRequest(e.Message);
             }
         }
+
         [Authorize]
         [HttpPost("outageInfoC")]
         public async Task<IActionResult> OutageInfoC(OT_OutageTrackerUserCDto reg)

@@ -149,7 +149,7 @@ namespace ActionTrakingSystem.Controllers
                     a.annualTargetTitle,
                     a.classificationTitle,
                     a.notApplicable,
-                    weightedScore = calculateFactor(a.value, (decimal)a.factor, a.indicatorWeight, a.formulaType)
+                    weightedScore = calculateFactor((decimal)a.value, (decimal)a.factor, a.indicatorWeight, a.formulaType)
                 }).OrderBy(a => a.groupId).OrderBy(a => a.indicatorCode).ToList();
                 return Ok(result);
             }
