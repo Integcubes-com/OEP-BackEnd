@@ -31,6 +31,8 @@ namespace ActionTrakingSystem.DTOs
         public int siteId { get; set; }
         public int equipmentId { get; set; }
         public int outageId { get; set; }
+        public DateTime? startDate { get; set; }
+        public DateTime? endDate { get; set; }
 
     }
     public class OT_SiteNextOutageUser

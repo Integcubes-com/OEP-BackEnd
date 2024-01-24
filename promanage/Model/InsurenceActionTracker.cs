@@ -25,10 +25,16 @@ namespace ActionTrakingSystem.Model
         public string scoreDetails { get; set; }
         public int? sourceId { get; set; }
         public int isDeleted { get; set; }
-        public DateTime? createdOn { get; set; }
+        public DateTime createdOn { get; set; }
         public int? createdBy { get; set; }
         public DateTime? modifiedOn { get; set; }
         public int? modifiedBy { get; set; }
         public int? dayStatus { get; set; }
+        public string adminComment { get; set; }
+        public string reviewerComment { get; set; }
+        public int isCompleted { get; set; }
+        public int rework { get; set; }
+        public int clusterReviewed { get; set; }
+        public DateTime? implementedDate { get; set; }
     }
 }

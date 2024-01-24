@@ -24,6 +24,7 @@ namespace ActionTrakingSystem.DTOs
         public int userId { get; set; }
         public string regionList { get; set; }
         public string siteList { get; set; }
+        public string clusterList { get; set; }
         public string modelList { get; set; }
         public string eqTypeList { get; set; }
         public string oemList { get; set; }

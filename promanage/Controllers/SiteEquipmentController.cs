@@ -73,6 +73,11 @@ namespace ActionTrakingSystem.Controllers
                 if (!string.IsNullOrEmpty(reg.regionList))
                     RegionIds = (reg.regionList.Split(',').Select(Int32.Parse).ToList());
 
+                List<int> ClusterIds = new List<int>();
+                if (!string.IsNullOrEmpty(reg.clusterList))
+                    ClusterIds = (reg.clusterList.Split(',').Select(Int32.Parse).ToList());
+
+
                 List<int> SitesIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.siteList))
                     SitesIds = (reg.siteList.Split(',').Select(Int32.Parse).ToList());
@@ -119,13 +124,14 @@ namespace ActionTrakingSystem.Controllers
                                            join stech in _context.SitesTechnology on s.siteId equals stech.siteId
                                            join aus in _context.AUSite.Where(a => a.userId == reg.userId) on s.siteId equals aus.siteId
                                            join aut in _context.AUTechnology.Where(a => a.userId == reg.userId) on stech.techId equals aut.technologyId
-                                           join r in _context.Regions.Where(a => (RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId)) on s.regionId equals r.regionId
+                                           join r in _context.Regions2.Where(a => (RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId)) on s.region2 equals r.regionId
                                            join f in _context.ModelEquipment on se.fleetEquipmentId equals f.fleetEquipId into allFleet
                                            from md in allFleet.DefaultIfEmpty()
                                            join ft in _context.ModelEquipmentType.Where(a => ((EqIds.Count == 0) || EqIds.Contains((int)a.typeId))) on md.equipmentTypeId equals ft.typeId
                                            join fe in _context.ModelEquipmentOEM.Where(a => ((OemIds.Count == 0) || OemIds.Contains((int)a.oemId))) on md.oemId equals fe.oemId
                                            join u in _context.AppUser on se.responsible equals u.userId into all5
                                            from ee in all5.DefaultIfEmpty()
+                                           join cll in _context.Cluster.Where(a => a.isDeleted == 0 && ((ClusterIds.Count == 0) || ClusterIds.Contains((int)a.clusterId))) on s.clusterId equals cll.clusterId
                                            select new
                                            {
                                                equipmentId = se.equipmentId,
@@ -144,6 +150,8 @@ namespace ActionTrakingSystem.Controllers
                                                responsibleName = ee.userName,
                                                unitCOD = se.unitCOD,
                                                unit = se.unit,
+                                               cll.clusterTitle,
+                                               s.clusterId,
                                            }).Distinct().OrderByDescending(z => z.equipmentId).ToListAsync();
 
 

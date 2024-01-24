@@ -112,6 +112,10 @@ namespace ActionTrakingSystem.Controllers
                 if (!string.IsNullOrEmpty(reg.regionList))
                     RegionIds = (reg.regionList.Split(',').Select(Int32.Parse).ToList());
 
+                List<int> ClusterIds = new List<int>();
+                if (!string.IsNullOrEmpty(reg.clusterList))
+                    ClusterIds = (reg.clusterList.Split(',').Select(Int32.Parse).ToList());
+
                 List<int> SitesIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.siteList))
                     SitesIds = (reg.siteList.Split(',').Select(Int32.Parse).ToList());
@@ -140,7 +144,7 @@ namespace ActionTrakingSystem.Controllers
                                             join stech in _context.SitesTechnology on s.siteId equals stech.siteId
                                             join aus in _context.AUSite.Where(a => a.userId == reg.userId) on s.siteId equals aus.siteId
                                             join aut in _context.AUTechnology.Where(a => a.userId == reg.userId) on stech.techId equals aut.technologyId
-                                            join r in _context.Regions.Where(a=>a.isDeleted == 0 && ((RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId))) on s.regionId equals r.regionId
+                                            join r in _context.Regions2.Where(a=>a.isDeleted == 0 && ((RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId))) on s.region2 equals r.regionId
                                             join p in _context.ProactiveRiskPrevention on ir.proactiveId equals p.proactiveId into allIns
                                             from ains in allIns.DefaultIfEmpty()
                                             join t in _context.InsuranceRecType on ir.recommendationTypeId equals t.typeId into allsec
@@ -157,6 +161,7 @@ namespace ActionTrakingSystem.Controllers
                                             from insurStatuss in alldes.DefaultIfEmpty()
                                             join ip in _context.InsuranceRecPriority on ir.priorityId equals ip.ipId into allgty
                                             from ipp in allgty.DefaultIfEmpty()
+                                            join icc in _context.Cluster.Where(a => a.isDeleted == 0 && ((ClusterIds.Count == 0) || ClusterIds.Contains((int)a.clusterId))) on s.clusterId equals icc.clusterId 
                                             select new
                                             {
                                                 recommendationId = ir.irId,
@@ -193,6 +198,8 @@ namespace ActionTrakingSystem.Controllers
                                                 report = ir.report,
                                                 reportAttahced = rss.faId == null?false:true,
                                                 reportName = rss.fileName,
+                                                icc.clusterId,
+                                                icc.clusterTitle,
                                             }).Distinct().OrderByDescending(z => z.recommendationId).ToListAsync();
 
                 var data = new

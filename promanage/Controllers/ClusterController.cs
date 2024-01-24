@@ -26,7 +26,7 @@ namespace ActionTrakingSystem.Controllers
             try
             {
                 var cluster = await (from a in _context.Cluster.Where(a => a.isDeleted == 0)
-                                     join r in _context.Regions.Where(a => a.isDeleted == 0) on a.regionId equals r.regionId
+                                     join r in _context.Regions2.Where(a => a.isDeleted == 0) on a.regionId equals r.regionId
                                      join e in _context.ClusterExecutiveVp on a.clusterId equals e.clusterId into all
                                      from ee in all.DefaultIfEmpty()
                                      join u in _context.AppUser on a.executiveDirector equals u.userId into all2

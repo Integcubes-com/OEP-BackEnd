@@ -5,7 +5,7 @@
         public int clusterId { get; set; }
         public string clusterTitle { get; set; }
         public string clusterCode { get; set; }
-        public int executiveDirectorId { get; set; }
+        public int? executiveDirectorId { get; set; }
         public string executiveDirectorTitle { get; set; }
         public int regionId { get; set; }
         public string regionTitle { get; set; }
@@ -16,7 +16,7 @@
         public int clusterId { get; set; }
         public string clusterTitle { get; set; }
         public string clusterCode { get; set; }
-        public int executiveDirectorId { get; set; }
+        public int? executiveDirectorId { get; set; }
         public string executiveDirectorTitle { get; set; }
         public string executiveVpName { get; set; }
         public int regionId { get; set; }

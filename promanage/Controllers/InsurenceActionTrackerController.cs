@@ -93,7 +93,7 @@ namespace ActionTrakingSystem.Controllers
                                             join stech in _context.SitesTechnology on s.siteId equals stech.siteId
                                             join aus in _context.AUSite.Where(a => a.userId == reg.userId) on s.siteId equals aus.siteId
                                             join aut in _context.AUTechnology.Where(a => a.userId == reg.userId) on stech.techId equals aut.technologyId
-                                            join r in _context.Regions on s.regionId equals r.regionId
+                                            join r in _context.Regions2 on s.region2 equals r.regionId
                                             join p in _context.ProactiveRiskPrevention on ir.proactiveId equals p.proactiveId into allIns
                                             from ains in allIns.DefaultIfEmpty()
                                             join t in _context.InsuranceRecType on ir.recommendationTypeId equals t.typeId into allsec
@@ -163,6 +163,10 @@ namespace ActionTrakingSystem.Controllers
                 if (!string.IsNullOrEmpty(reg.regionList))
                     RegionIds = (reg.regionList.Split(',').Select(Int32.Parse).ToList());
 
+                List<int> ClusterIds = new List<int>();
+                if (!string.IsNullOrEmpty(reg.clusterList))
+                    ClusterIds = (reg.clusterList.Split(',').Select(Int32.Parse).ToList());
+
                 List<int> SitesIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.siteList))
                     SitesIds = (reg.siteList.Split(',').Select(Int32.Parse).ToList());
@@ -200,9 +204,10 @@ namespace ActionTrakingSystem.Controllers
                                      from bbb in aaa.DefaultIfEmpty()
                                      join so in _context.IATrackingSource on iat.sourceId equals so.sourceId into aaaa
                                      from bbbb in aaaa.DefaultIfEmpty()
-                                     join rege in _context.Regions.Where(a => (RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId)) on s.regionId equals rege.regionId
+                                     join rege in _context.Regions2.Where(a => (RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId)) on s.region2 equals rege.regionId
                                      join ds in _context.IATrackingDaysStatus on iat.dayStatus equals ds.iatDayStatusId into all5
                                      from dsd in all5.DefaultIfEmpty()
+                                     join icc in _context.Cluster.Where(a => a.isDeleted == 0 && ((ClusterIds.Count == 0) || ClusterIds.Contains((int)a.clusterId))) on s.clusterId equals icc.clusterId
                                      select new
                                      {
                                          insurenceActionTrackerId = iat.iaId,
@@ -240,6 +245,8 @@ namespace ActionTrakingSystem.Controllers
                                          sourceTitle = bbbb.sourceTitle,
                                          reportAttahced = iatrr.iatFileId == null ? false : true,
                                          reportName = iatrr.fileName,
+                                         icc.clusterId,
+                                         icc.clusterTitle,
                                      }
                     ).Distinct().OrderByDescending(a => a.insurenceActionTrackerId).ToListAsync();
                 var obj = new
@@ -255,81 +262,6 @@ namespace ActionTrakingSystem.Controllers
             }
 
         }
-        //[Authorize]
-        //[HttpPost("getInsurenceActionTracker")]
-        //public async Task<IActionResult> getInsurenceTracker(AssignInsurenceUserFilter reg)
-        //{
-        //    try
-        //    {
-        //        var tracker = await (from iat in _context.InsurenceActionTracker.Where(a => a.isDeleted == 0 && (a.createdOn >= reg.filter.startData || reg.filter.startData == null) && (a.createdOn <= reg.filter.endDate || reg.filter.endDate == null) && (a.sourceId == reg.filter.source || reg.filter.source == -1) && (a.iatCompanyId == reg.filter.department || reg.filter.department == -1))
-        //                             join ir in _context.InsuranceRecommendations.Where(sd => sd.isDeleted == 0 && ( reg.filter.siteId == -1|| sd.siteId == reg.filter.siteId)) on iat.recommendationId equals ir.irId
-        //                             join s in _context.Sites on ir.siteId equals s.siteId
-        //                             join stech in _context.SitesTechnology on s.siteId equals stech.siteId
-        //                             join aus in _context.AUSite.Where(a => a.userId == reg.userId) on s.siteId equals aus.siteId
-        //                             join aut in _context.AUTechnology.Where(a => a.userId == reg.userId) on stech.techId equals aut.technologyId
-        //                             join st in _context.IATrackingStatus on iat.iatStatusId equals st.statusId into aa
-        //                             from bb in aa.DefaultIfEmpty()
-        //                             join iatr in _context.IATrackingFile on iat.iaId equals iatr.iatId into alll
-        //                             from iatrr in alll.DefaultIfEmpty()
-        //                             join ev in _context.IATrackingEvidence on iat.evidenceAvailableId equals ev.iatEvidenceId into all3
-        //                             from evd in all3.DefaultIfEmpty()
-        //                             join c in _context.IATrackingCompany on iat.iatCompanyId equals c.iatId into aaa
-        //                             from bbb in aaa.DefaultIfEmpty()
-        //                             join so in _context.IATrackingSource on iat.sourceId equals so.sourceId into aaaa
-        //                             from bbbb in aaaa.DefaultIfEmpty()
-        //                             join rege in _context.Regions.Where(a=>reg.filter.regionId == -1|| a.regionId == reg.filter.regionId) on s.regionId equals rege.regionId
-        //                             join ds in _context.IATrackingDaysStatus on iat.dayStatus equals ds.iatDayStatusId into all5
-        //                             from dsd in all5.DefaultIfEmpty()
-        //                             select new
-        //                             {
-        //                                 insurenceActionTrackerId = iat.iaId,
-        //                                 recommendationId = iat.recommendationId,
-        //                                 recommendationTitle = ir.title,
-        //                                 recommendationReference = ir.referenceNumber + '-' + ir.title,
-        //                                 iat.action,
-        //                                 iat.targetDate,
-        //                                 statusId = iat.iatStatusId,
-        //                                 statusTitle = bb.statusTitle,
-        //                                 statusScore = bb.score,
-        //                                 companyId = iat.iatCompanyId,
-        //                                 companyTitle = bbb.iatTitle,
-        //                                 iat.comments,
-        //                                 iat.closureDate,
-        //                                 evidenceAvailableId = iat.evidenceAvailableId,
-        //                                 evidenceAvailable = evd.aitEvidenceTitle,
-        //                                 evidenceAvailableScore = evd.score,
-        //                                 dayStatusId = iat.dayStatus,
-        //                                 dayStatusTitle = dsd.iatDayStatus,
-        //                                 dayStatusScore = dsd.score,
-        //                                 iat.calcStatus,
-        //                                 iat.calcEvid,
-        //                                 iat.calcDate,
-        //                                 iat.completionScore,
-        //                                 iat.daysToTarget,
-        //                                 iat.scoreDetails,
-        //                                 siteId = ir.siteId,
-        //                                 siteTitle = s.siteName,
-        //                                 regionId = s.regionId,
-        //                                 regionTitle = rege.title,
-        //                                 iat.sourceId,
-        //                                 sourceTitle = bbbb.sourceTitle,
-        //                                 reportAttahced = iatrr.iatFileId == null ? false : true,
-        //                                 reportName = iatrr.fileName,
-        //                             }
-        //            ).Distinct().OrderByDescending(a=>a.insurenceActionTrackerId).ToListAsync();
-        //        var obj = new
-        //        {
-        //            tracker,
-        //        };
-
-        //        return Ok(obj);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest(ex.Message);
-        //    }
-
-        //}
         [Authorize]
         [HttpPost("saveInsurenceActionTracker")]
         public async Task<IActionResult> SaveInsurenceTracker(AssignInsurenceTrackerDto reg)

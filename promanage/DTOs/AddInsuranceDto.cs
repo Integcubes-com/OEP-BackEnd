@@ -23,6 +23,7 @@ namespace ActionTrakingSystem.DTOs
     {
         public int userId { get; set; }
         public string regionList { get; set; }
+        public string clusterList { get; set; }
         public string siteList { get; set; }
         public string sourceList { get; set; }
         public string priorityList { get; set; }

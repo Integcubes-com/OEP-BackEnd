@@ -65,6 +65,11 @@ namespace ActionTrakingSystem.DTOs
         public string sapCalc { get; set; }
         public int? evidenceId { get; set; }
         public string evidenceTitle { get; set; }
+        public string adminComment { get; set; }
+        public string reviewerComment { get; set; }
+        public bool? isCompleted { get; set; }
+        public bool? rework { get; set; }
+        public bool? clusterReviewed { get; set; }
     }
     public class actionPackageDto
     {

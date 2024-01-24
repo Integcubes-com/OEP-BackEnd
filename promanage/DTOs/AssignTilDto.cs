@@ -46,6 +46,11 @@
         public int userId { get; set; }
         public AssignTilDto data { get; set; }
     }
+    public class copyActionDto
+    {
+        public int userId { get; set; }
+        public ActionPackageDto data { get; set; }
+    }
     public class AssignTilDto
     {
         public ActionPackageDto action { get; set; }

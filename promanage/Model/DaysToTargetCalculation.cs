@@ -103,30 +103,48 @@ namespace ActionTrakingSystem.Model
             }
         }
 
-        public static int CalculateStatusId(decimal? finalImpScore)
+        public static int CalculateStatusId(decimal? finalImpScore, bool isCompleted, bool rework)
         {
-            if(finalImpScore == 0)
+            if (rework == true)
             {
                 return 2;
+
             }
-            else if(finalImpScore == 1)
+            else if (finalImpScore == 0)
+            {
+                return 2;
+
+            }
+            else if (finalImpScore == 1 && isCompleted == true)
             {
                 return 3;
+            }
+            else if(finalImpScore == 1 && isCompleted == false)
+            {
+                return 5;
             }
             else
             {
                 return 4;
             }
         }
-        public static string CalculateStatusTitle(decimal? finalImpScore)
+        public static string CalculateStatusTitle(decimal? finalImpScore, bool isCompleted, bool rework)
         {
-            if (finalImpScore == 0)
+            if(rework == true)
             {
                 return "Open";
             }
-            else if (finalImpScore == 1)
+            else if (finalImpScore == 0)
+            {
+                return "Open";
+            }
+            else if (finalImpScore == 1 && isCompleted == true)
             {
                 return "Closed";
+            }
+            else if (finalImpScore == 1 && isCompleted == false)
+            {
+                return "In Progress";
             }
             else
             {
@@ -134,17 +152,26 @@ namespace ActionTrakingSystem.Model
             }
         }
 
-        public static string NewCalcTil(decimal? finalImpScore, DateTime endDate)
+        public static string NewCalcTil(decimal? finalImpScore, DateTime endDate, bool isCompleted, bool rework)
         {
             try
             {
                 DateTime startDate = DateTime.Now;
                 var TotalDays = endDate.Subtract(startDate).Days;
-
-                if (finalImpScore == 1)
+                if (rework == true)
+                {
+                    return "Open";
+                }
+                else if (finalImpScore == 1 && isCompleted == true)
                 {
                     //else
                     return "Closed";
+
+                }
+                else if (finalImpScore == 1 && isCompleted == false)
+                {
+                    //else
+                    return "Implemented";
 
                 }
                 else

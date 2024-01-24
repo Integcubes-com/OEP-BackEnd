@@ -26,7 +26,7 @@ namespace ActionTrakingSystem.Controllers
             try
             {
                 DateTime filterDate = new DateTime(2023, 12, 31);
-                var siteOutages = await (from a in _context.OT_SiteNextOutages.Where(a => a.isDeleted == 0 && a.nextOutageDate > filterDate)
+                var siteOutages = await (from a in _context.OT_SiteNextOutages.Where(a => a.isDeleted == 0 && a.nextOutageDate > filterDate && (reg.filter.startDate == null || a.nextOutageDate >= reg.filter.startDate) && (reg.filter.endDate == null || a.nextOutageDate <= reg.filter.endDate))
                                          join e in _context.OT_SiteEquipment.Where(a=>reg.filter.equipmentId == -1 || a.equipmentId == reg.filter.equipmentId) on a.equipmentId equals e.equipmentId
                                          join s in _context.Sites.Where(a=>(a.otValid== 1)&& (reg.filter.siteId == -1 || a.siteId == reg.filter.siteId)) on e.siteId equals s.siteId
                                          join ot in _context.OT_ISiteOutages.Where(a=>reg.filter.outageId == -1 || a.outageId == reg.filter.outageId) on a.outageId equals ot.outageId
@@ -50,7 +50,7 @@ namespace ActionTrakingSystem.Controllers
                                              outageTitle = ot.outageTitle,
                                              nextOutageDate = a.nextOutageDate
                                          }
-                                        ).OrderByDescending(a => a.snoId).ToListAsync();
+                                        ).OrderBy(a => a.nextOutageDate).ToListAsync();
                 return Ok(siteOutages);
             }
             catch (Exception e)

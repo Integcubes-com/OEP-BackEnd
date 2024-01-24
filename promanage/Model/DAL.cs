@@ -1,4 +1,5 @@
 ﻿using ActionTrakingSystem.Controllers;
+using ActionTrakingSystem.DTOs;
 using ActionTrakingSystem.Model;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,12 +8,20 @@ namespace ActionTrakingSystem.Model
     public class DAL : DbContext
     {
         public DAL(DbContextOptions<DAL> options) : base(options) { }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<TilDetailReportDto>().HasNoKey();
+            modelBuilder.Entity<TilActionReportDto>().HasNoKey();
+            base.OnModelCreating(modelBuilder);
+            
+        }
         public DbSet<AppUser> AppUser { get; set; }
         public DbSet<RegionsExecutiveVp> RegionsExecutiveVp { get; set; }
         public DbSet<CountryExecutiveVp> CountryExecutiveVp { get; set; }
         public DbSet<OT_IStatus> OT_IStatus { get; set; }
         public DbSet<OMA_SiteControl> OMA_SiteControl { get; set; }
         public DbSet<OT_Phase> OT_Phase { get; set; }
+        public DbSet<TilDetailReportDto> TilDetailReport { get; set; }
         public DbSet<OT_IActionOwnerUser> OT_IActionOwnerUser { get; set; }
         public DbSet<OT_IActionOwner> OT_IActionOwner { get; set; }
         public DbSet<OT_PhaseOutageTracker> OT_PhaseOutageTracker { get; set; }
@@ -151,6 +160,7 @@ namespace ActionTrakingSystem.Model
         public DbSet<QF_Questions> QF_Questions { get; set; }
         public DbSet<QF_User> QF_User { get; set; }
         public DbSet<KPI_SiteInfo> KPI_SiteInfo { get; set; }
+        public DbSet<TilActionReportDto> TilActionReportDto { get; set; }
 
     }
 }

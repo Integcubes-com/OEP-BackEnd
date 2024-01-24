@@ -30,15 +30,19 @@ namespace ActionTrakingSystem.DTOs
     {
         public int userId { get; set; }
         public string regionList { get; set; }
+        public string finalImpList { get; set; }
         public string siteList { get; set; }
         public string focusList { get; set; }
         public string severityList { get; set; }
+        public string clusterList { get; set; }
         public string equipmentList { get; set; }
         public string sapList { get; set; }
         public string statusList { get; set; }
         public string priorityList { get; set; }
-        
+        public string unitStatusList { get; set; }
         public string daysList { get; set; }
+        public string quarterList { get; set; }
+
     }
     public class EndUserFilter
     {
@@ -50,6 +54,5 @@ namespace ActionTrakingSystem.DTOs
         public string daysToTarget { get; set; } = "";
         public int regionId { get; set; } = -1;
         public int siteId { get; set; } = -1;
-
     }
 }

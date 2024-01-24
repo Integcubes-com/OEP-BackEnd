@@ -218,7 +218,7 @@ namespace ActionTrakingSystem.Controllers
                                             join stech in _context.SitesTechnology on s.siteId equals stech.siteId
                                             join aus in _context.AUSite.Where(a => a.userId == reg.userId) on s.siteId equals aus.siteId
                                             join aut in _context.AUTechnology.Where(a => a.userId == reg.userId) on stech.techId equals aut.technologyId
-                                            join r in _context.Regions on s.regionId equals r.regionId
+                                            join r in _context.Regions2 on s.region2 equals r.regionId
                                             join p in _context.ProactiveRiskPrevention on ir.proactiveId equals p.proactiveId into allIns
                                             from ains in allIns.DefaultIfEmpty()
                                             join t in _context.InsuranceRecType on ir.recommendationTypeId equals t.typeId into allsec
@@ -292,7 +292,9 @@ namespace ActionTrakingSystem.Controllers
                 if (!string.IsNullOrEmpty(reg.siteList))
                     SitesIds = (reg.siteList.Split(',').Select(Int32.Parse).ToList());
 
-
+                List<int> ClusterIds = new List<int>();
+                if (!string.IsNullOrEmpty(reg.clusterList))
+                    ClusterIds = (reg.clusterList.Split(',').Select(Int32.Parse).ToList());
                 List<int> SourceIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.sourceList))
                     SourceIds = (reg.sourceList.Split(',').Select(Int32.Parse).ToList());
@@ -300,7 +302,7 @@ namespace ActionTrakingSystem.Controllers
                 List<int> CompanyIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.companyList))
                     CompanyIds = (reg.companyList.Split(',').Select(Int32.Parse).ToList());
-
+                List<int> QuarterIds = QuaterCalc(reg.quaterList);
 
                 List<int> StatusIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.statusList))
@@ -319,7 +321,8 @@ namespace ActionTrakingSystem.Controllers
                                      //&& (a.targetDate >= reg.filter.startDate || reg.filter.startDate == null) && (a.targetDate <= reg.filter.endDate || reg.filter.endDate == null) && 
                                      ((SourceIds.Count == 0) || SourceIds.Contains((int)a.sourceId)) &&
                                      ((CompanyIds.Count == 0) || CompanyIds.Contains((int)a.iatCompanyId)) &&
-                                     ((StatusIds.Count == 0) || StatusIds.Contains((int)a.iatStatusId)))
+                                     ((StatusIds.Count == 0) || StatusIds.Contains((int)a.iatStatusId)) &&
+                                     ((QuarterIds.Count == 0) || QuarterIds.Contains((int)a.createdOn.Month)))
                                      join au in _context.AppUser.Where(a => a.isDeleted == 0) on iat.assignedTo equals au.userId into alluser
                                      from auu in alluser.DefaultIfEmpty()
                                      join ir in _context.InsuranceRecommendations.Where(sd => sd.isDeleted == 0 && ((PriorityIds.Count == 0) || PriorityIds.Contains((int)sd.priorityId))) on iat.recommendationId equals ir.irId
@@ -348,8 +351,8 @@ namespace ActionTrakingSystem.Controllers
                                          //from iatrr in alll.DefaultIfEmpty()
                                      join so in _context.IATrackingSource on iat.sourceId equals so.sourceId into aaaa
                                      from bbbb in aaaa.DefaultIfEmpty()
-
-                                     join rege in _context.Regions.Where(a => (RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId)) on s.regionId equals rege.regionId
+                                     join icc in _context.Cluster.Where(a => a.isDeleted == 0 && ((ClusterIds.Count == 0) || ClusterIds.Contains((int)a.clusterId))) on s.clusterId equals icc.clusterId
+                                     join rege in _context.Regions2.Where(a => (RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId)) on s.region2 equals rege.regionId
                                      join rvp in _context.RegionsExecutiveVp on rege.regionId equals rvp.regionId into allrege
                                      from rvpp in allrege.DefaultIfEmpty()
                                      join ds in _context.IATrackingDaysStatus on iat.dayStatus equals ds.iatDayStatusId into all5
@@ -379,6 +382,11 @@ namespace ActionTrakingSystem.Controllers
                                          iat.closureDate,
                                          ir.priorityId,
                                          priorityTitle = ip.ipTitle,
+                                         isCompleted = iat.isCompleted == 1 ? true : false,
+                                        iat.reviewerComment ,
+                                         clusterReviewed = iat.clusterReviewed == 1 ? true : false,
+                                         iat.implementedDate,
+                                         rework = iat.rework == 1 ? true : false,
                                          evidenceAvailableId = iat.evidenceAvailableId,
                                          evidenceAvailable = evd.aitEvidenceTitle,
                                          evidenceAvailableScore = evd.score,
@@ -388,6 +396,8 @@ namespace ActionTrakingSystem.Controllers
                                          iat.calcStatus,
                                          iat.calcEvid,
                                          ir.type,
+                                         iat.adminComment,
+
                                          documentTypeId = bccc.documentId,
                                          documentTypeTitle = bccc.documnetTitle,
                                          iat.calcDate,
@@ -400,6 +410,8 @@ namespace ActionTrakingSystem.Controllers
                                          regionTitle = rege.title,
                                          iat.sourceId,
                                          sourceTitle = bbbb.sourceTitle,
+                                         icc.clusterId,
+                                         icc.clusterTitle,
                                          //reportAttahced = iatrr.iatFileId == null ? false : true,
                                          //reportName = iatrr.fileName,
                                      }
@@ -425,6 +437,7 @@ namespace ActionTrakingSystem.Controllers
                     s.nomacStatusId,
                     s.nomacStatusTitle,
                     s.companyId,
+                    s.adminComment,
                     s.companyTitle,
                     s.comments,
                     s.closureDate,
@@ -432,6 +445,11 @@ namespace ActionTrakingSystem.Controllers
                     s.evidenceAvailableId,
                     s.evidenceAvailable,
                     s.evidenceAvailableScore,
+                    s.isCompleted,
+                    s.reviewerComment,
+                    s.clusterReviewed,
+                    s.implementedDate,
+                    s.rework,
                     s.dayStatusId,
                     s.dayStatusTitle,
                     s.dayStatusScore,
@@ -447,6 +465,8 @@ namespace ActionTrakingSystem.Controllers
                     s.regionTitle,
                     s.sourceId,
                     s.sourceTitle,
+                    s.clusterId,
+                    s.clusterTitle,
                     //s.reportAttahced,
                     //s.reportName,
                 }).ToList();
@@ -478,7 +498,9 @@ namespace ActionTrakingSystem.Controllers
                 List<int> PriorityIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.priorityList))
                     PriorityIds = (reg.priorityList.Split(',').Select(Int32.Parse).ToList());
-
+                List<int> ClusterIds = new List<int>();
+                if (!string.IsNullOrEmpty(reg.clusterList))
+                    ClusterIds = (reg.clusterList.Split(',').Select(Int32.Parse).ToList());
                 List<int> SourceIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.sourceList))
                     SourceIds = (reg.sourceList.Split(',').Select(Int32.Parse).ToList());
@@ -496,63 +518,7 @@ namespace ActionTrakingSystem.Controllers
                 if (!string.IsNullOrEmpty(reg.dayList))
                     DaysIds = (reg.dayList.Split(',').ToList());
                 var nowDate = DateTime.Now;
-                //var tracker = await (from iat in _context.InsurenceActionTracker.Where(a => a.isDeleted == 0 &&
-                //                     //(a.targetDate >= reg.filter.startDate || reg.filter.startDate == null) && (a.targetDate <= reg.filter.endDate || reg.filter.endDate == null) && (a.sourceId == reg.filter.sourceId || reg.filter.sourceId == -1) && (a.iatCompanyId == reg.filter.departmentId || reg.filter.departmentId == -1) && (a.iatStatusId == reg.filter.statusId || reg.filter.statusId == -1)
-                //                     ((SourceIds.Count == 0) || SourceIds.Contains((int)a.sourceId)) &&
-                //                     ((CompanyIds.Count == 0) || CompanyIds.Contains((int)a.iatCompanyId)) &&
-                //                     ((StatusIds.Count == 0) || StatusIds.Contains((int)a.iatStatusId))
-                //                     )
-                //                     join ir in _context.InsuranceRecommendations.Where(sd => sd.isDeleted == 0) on iat.recommendationId equals ir.irId
-                //                     join s in _context.Sites.Where(a => (SitesIds.Count == 0) || SitesIds.Contains((int)a.siteId)) on ir.siteId equals s.siteId
-                //                     join ts in _context.SitesTechnology.Where(a => a.isDeleted == 0) on s.siteId equals ts.siteId
-                //                     join aus in _context.AUSite.Where(a => a.userId == reg.userId) on s.siteId equals aus.siteId
-                //                     join aut in _context.AUTechnology.Where(a => a.userId == reg.userId) on ts.techId equals aut.technologyId
-                //                     join st in _context.IATrackingStatus on iat.iatStatusId equals st.statusId into aa
-                //                     from bb in aa.DefaultIfEmpty()
-                //                     join ev in _context.IATrackingEvidence on iat.evidenceAvailableId equals ev.iatEvidenceId into all3
-                //                     from evd in all3.DefaultIfEmpty()
-                //                     join c in _context.IATrackingCompany on iat.iatCompanyId equals c.iatId into aaa
-                //                     from bbb in aaa.DefaultIfEmpty()
-                //                     join so in _context.IATrackingSource on iat.sourceId equals so.sourceId into aaaa
-                //                     from bbbb in aaaa.DefaultIfEmpty()
-                //                     join rege in _context.Regions.Where(a => (RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId)) on s.regionId equals rege.regionId
-                //                     join ds in _context.IATrackingDaysStatus on iat.dayStatus equals ds.iatDayStatusId into all5
-                //                     from dsd in all5.DefaultIfEmpty()
-                //                     select new
-                //                     {
-                //                         insurenceActionTrackerId = iat.iaId,
-                //                         recommendationId = iat.recommendationId,
-                //                         recommendationTitle = ir.title,
-                //                         recommendationReference = ir.referenceNumber + '-' + ir.title,
-                //                         iat.action,
-                //                         iat.targetDate,
-                //                         statusId = iat.iatStatusId,
-                //                         statusTitle = bb.statusTitle,
-                //                         statusScore = bb.score,
-                //                         companyId = iat.iatCompanyId,
-                //                         companyTitle = bbb.iatTitle,
-                //                         iat.comments,
-                //                         iat.closureDate,
-                //                         evidenceAvailableId = iat.evidenceAvailableId,
-                //                         evidenceAvailable = evd.aitEvidenceTitle,
-                //                         evidenceAvailableScore = evd.score,
-                //                         dayStatusId = iat.dayStatus,
-                //                         dayStatusTitle = dsd.iatDayStatus,
-                //                         dayStatusScore = dsd.score,
-                //                         iat.calcStatus,
-                //                         iat.calcEvid,
-                //                         iat.calcDate,
-                //                         iat.completionScore,
-                //                         iat.daysToTarget,
-                //                         iat.scoreDetails,
-                //                         ir.siteId,
-                //                         siteTitle = s.siteName,
-                //                         regionId = s.regionId,
-                //                         regionTitle = rege.title,
-                //                         iat.sourceId,
-                //                         sourceTitle = bbbb.sourceTitle,
-                //                     }
-                //    ).Distinct().OrderByDescending(a => a.insurenceActionTrackerId).ToListAsync();
+
                 var tracker = await (from iat in _context.InsurenceActionTracker.Where(a => a.isDeleted == 0 &&
                                   ((SourceIds.Count == 0) || SourceIds.Contains((int)a.sourceId)) &&
                                   ((CompanyIds.Count == 0) || CompanyIds.Contains((int)a.iatCompanyId)) &&
@@ -565,7 +531,6 @@ namespace ActionTrakingSystem.Controllers
                                      join insurStatus in _context.InsuranceRecInsurenceStatus on ir.insuranceStatusId equals insurStatus.insurenceStatusId
                                      join d in _context.InsuranceRecDocumentType on ir.documentTypeId equals d.documentId into allthree
                                      from bccc in allthree.DefaultIfEmpty()
-
 
                                      join s in _context.Sites.Where(a => (SitesIds.Count == 0) || SitesIds.Contains((int)a.siteId)) on ir.siteId equals s.siteId
                                      join cn in _context.Country on s.countryId equals cn.countryId
@@ -582,11 +547,12 @@ namespace ActionTrakingSystem.Controllers
                                      join so in _context.IATrackingSource on iat.sourceId equals so.sourceId into aaaa
                                      from bbbb in aaaa.DefaultIfEmpty()
 
-                                     join rege in _context.Regions.Where(a => (RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId)) on s.regionId equals rege.regionId
+                                     join rege in _context.Regions2.Where(a => (RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId)) on s.region2 equals rege.regionId
                                      
                                      join ds in _context.IATrackingDaysStatus on iat.dayStatus equals ds.iatDayStatusId into all5
                                      from dsd in all5.DefaultIfEmpty()
-                           
+                                     join icc in _context.Cluster.Where(a => a.isDeleted == 0 && ((ClusterIds.Count == 0) || ClusterIds.Contains((int)a.clusterId))) on s.clusterId equals icc.clusterId
+
                                      select new
                                      {
                                          assignedToId = iat.assignedTo == null ? -1 : iat.assignedTo,
@@ -601,6 +567,7 @@ namespace ActionTrakingSystem.Controllers
                                          nomacStatusId = ns.nomacStatusId,
                                          nomacStatusTitle = ns.nomacStatusTitle,
                                          iat.targetDate,
+                                         iat.adminComment,
                                          statusId = iat.iatStatusId,
                                          statusTitle = bb.statusTitle,
                                          statusScore = bb.score,
@@ -631,6 +598,13 @@ namespace ActionTrakingSystem.Controllers
                                          regionTitle = rege.title,
                                          iat.sourceId,
                                          sourceTitle = bbbb.sourceTitle,
+                                         icc.clusterId,
+                                         icc.clusterTitle,
+                                         isCompleted = iat.isCompleted == 1 ? true : false,
+                                         iat.reviewerComment,
+                                         clusterReviewed = iat.clusterReviewed == 1 ? true : false,
+                                         rework = iat.rework == 1 ? true : false,
+                                         iat.implementedDate,
                                          //reportAttahced = iatrr.iatFileId == null ? false : true,
                                          //reportName = iatrr.fileName,
                                      }
@@ -647,6 +621,8 @@ namespace ActionTrakingSystem.Controllers
                     s.recommendationReference,
                     s.action,
                     s.targetDate,
+                    s.clusterId,
+                    s.clusterTitle,
                     s.statusId,
                     s.statusTitle,
                     s.statusScore,
@@ -659,6 +635,11 @@ namespace ActionTrakingSystem.Controllers
                     s.comments,
                     s.closureDate,
                     s.priorityTitle,
+                    s.isCompleted,
+                    s.reviewerComment,
+                    s.clusterReviewed,
+                    s.implementedDate,
+                    s.rework,
                     s.evidenceAvailableId,
                     s.evidenceAvailable,
                     s.evidenceAvailableScore,
@@ -675,6 +656,7 @@ namespace ActionTrakingSystem.Controllers
                     s.siteTitle,
                     s.regionId,
                     s.regionTitle,
+                    s.adminComment,
                     s.sourceId,
                     s.sourceTitle,
                 }).ToList();
@@ -700,12 +682,20 @@ namespace ActionTrakingSystem.Controllers
                                                     select i).FirstOrDefaultAsync();
                 if (ins != null)
                 {
-
+                    ins.adminComment = reg.insurenceAction.adminComment;
+                    ins.isCompleted = 0;
+                    ins.rework = 0;
+                    ins.clusterReviewed = 0;
                     ins.comments = reg.insurenceAction.comments;
                     ins.iatStatusId = reg.insurenceAction.statusId;
-                    if(reg.insurenceAction.statusId == 1)
+                  
+                    if(ins.iatStatusId == 1)
                     {
                         ins.closureDate = DateTime.Now;
+                    }
+                    else if (ins.iatStatusId == 4)
+                    {
+                        ins.implementedDate = DateTime.Now;
                     }
                     else
                     {
@@ -719,7 +709,7 @@ namespace ActionTrakingSystem.Controllers
                         ins.assignedTo = reg.insurenceAction.assignedToId;
 
                     }
-                    if (ins.targetDate > reg.insurenceAction.closureDate)
+                    if (ins.targetDate > ins.closureDate)
                     {
                         ins.calcDate = 1;
                     }
@@ -729,7 +719,7 @@ namespace ActionTrakingSystem.Controllers
                     }
                     var totalCalc = (ins.calcEvid + ins.calcStatus) / 2 * 100;
                     ins.completionScore = totalCalc.ToString() + "%";
-                    ins.scoreDetails = "Evidence Score = " + " " + reg.insurenceAction.evidenceAvailableScore + ";" + "Status Score = " + " " + reg.insurenceAction.statusScore + ";" + "Total Score = " + " " + ins.completionScore;
+                    ins.scoreDetails = "Evidence Score = " + " " + ins.calcEvid + ";" + "Status Score = " + " " + reg.insurenceAction.statusScore + ";" + "Total Score = " + " " + ins.completionScore;
                     _context.SaveChanges();
 
                     var statusChecker = (from a in _context.InsurenceActionTracker.Where(a => a.recommendationId == ins.recommendationId && a.isDeleted == 0)
@@ -791,6 +781,155 @@ namespace ActionTrakingSystem.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [Authorize]
+        [HttpPost("reviewerInsurenceActionTracker")]
+        public async Task<IActionResult> StatusTrackerReviewer(AssignInsurenceStatusDto reg)
+        {
+            try
+            {
+                InsurenceActionTracker ins = await (from i in _context.InsurenceActionTracker.Where(a => a.iaId == reg.insurenceAction.insurenceActionTrackerId)
+                                                    select i).FirstOrDefaultAsync();
+                if (ins != null)
+                {
+
+                    ins.reviewerComment = reg.insurenceAction.reviewerComment;
+                    ins.isCompleted = (int)(reg.insurenceAction.isCompleted == false ? 0 : 1);
+                    ins.rework = (int)(reg.insurenceAction.rework == false ? 0 : 1);
+                    ins.clusterReviewed = (int)(reg.insurenceAction.clusterReviewed == false ? 0 : 1);
+                    ins.comments = reg.insurenceAction.comments;
+                    ins.iatStatusId = reg.insurenceAction.statusId;
+                    if (ins.isCompleted == 1)
+                    {
+                        ins.iatStatusId = 1;
+                    }
+                    if (ins.rework == 1)
+                    {
+                        ins.iatStatusId = 2;
+                    }
+                    if (ins.iatStatusId == 1)
+                    {
+                        ins.closureDate = DateTime.Now;
+                    }
+                    else if(ins.iatStatusId == 4)
+                    {
+                        ins.implementedDate = DateTime.Now;
+                    }
+                    else
+                    {
+                        ins.closureDate = null;
+                    }
+                    ins.evidenceAvailableId = reg.insurenceAction?.evidenceAvailableId;
+                    ins.calcEvid = reg.insurenceAction.evidenceAvailableScore;
+                    ins.calcStatus = reg.insurenceAction.statusScore;
+                    if (reg.insurenceAction.assignedToId != -1 || reg.insurenceAction.assignedToId != null)
+                    {
+                        ins.assignedTo = reg.insurenceAction.assignedToId;
+
+                    }
+                    if (ins.targetDate > ins.closureDate)
+                    {
+                        ins.calcDate = 1;
+                    }
+                    else
+                    {
+                        ins.calcDate = 0;
+                    }
+                    var totalCalc = (ins.calcEvid + ins.calcStatus) / 2 * 100;
+                    ins.completionScore = totalCalc.ToString() + "%";
+                    ins.scoreDetails = "Evidence Score = " + " " + ins.calcEvid + ";" + "Status Score = " + " " + reg.insurenceAction.statusScore + ";" + "Total Score = " + " " + ins.completionScore;
+                    _context.SaveChanges();
+
+                    var statusChecker = (from a in _context.InsurenceActionTracker.Where(a => a.recommendationId == ins.recommendationId && a.isDeleted == 0)
+                                         select a).ToList();
+                    InsuranceRecommendations rec = await (from r in _context.InsuranceRecommendations.Where(a => a.irId == ins.recommendationId)
+                                                          select r).FirstOrDefaultAsync();
+                    if (rec.insuranceStatusId == 2 || rec.insuranceStatusId == 3)
+                    {
+                        decimal? avgTotal = 0;
+
+                        if (statusChecker.Count > 0)
+                        {
+                            decimal? calTotal = 0;
+                            foreach (var chk in statusChecker)
+                            {
+                                calTotal += (((chk.calcEvid + chk.calcStatus) / 2) * 100);
+                            }
+                            avgTotal = calTotal / statusChecker.Count;
+
+                        }
+                        if (avgTotal == 100)
+                        {
+                            rec.nomacStatusId = 4;
+                        }
+                        else if (avgTotal >= 30)
+                        {
+                            rec.nomacStatusId = 3;
+                        }
+                        else
+                        {
+                            if (rec.insuranceStatusId == 1)
+                            {
+                                rec.nomacStatusId = 1;
+                            }
+                            else if (rec.insuranceStatusId == 4)
+                            {
+                                rec.nomacStatusId = 5;
+                            }
+                            else if (rec.insuranceStatusId == 3)
+                            {
+                                rec.nomacStatusId = 2;
+                            }
+                            else if (rec.insuranceStatusId == 5)
+                            {
+                                rec.nomacStatusId = 6;
+                            }
+                            else if (rec.insuranceStatusId == 2)
+                            {
+                                rec.nomacStatusId = 3;
+                            }
+                        }
+                        _context.SaveChanges();
+                    }
+                }
+                return Ok(reg.insurenceAction);
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        public List<int> QuaterCalc(string quarters)
+        {
+            List<int> MonthIds = new List<int>();
+            List<int[]> quarterMonths = new List<int[]>
+    {
+        new int[] { 1, 2, 3 },
+        new int[] { 4, 5, 6 },
+        new int[] { 7, 8, 9 },
+        new int[] { 10, 11, 12 }
+    };
+
+            if (!string.IsNullOrEmpty(quarters))
+            {
+                List<int> QuarterIds = quarters.Split(',').Select(int.Parse).ToList();
+                foreach (var quarter in QuarterIds)
+                {
+                    if (quarter >= 1 && quarter <= 4)
+                    {
+                        MonthIds.AddRange(quarterMonths[quarter - 1]);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Invalid quarter: {quarter}");
+                    }
+                }
+            }
+
+            return MonthIds;
         }
     }
 }

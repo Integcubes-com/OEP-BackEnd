@@ -278,12 +278,10 @@ namespace ActionTrakingSystem.Controllers
         {
             try
             {
-                var sites = await (from s in _context.Sites.Where(a => a.isDeleted == 0 && a.otValid == 1)
+                var sites = await (from s in _context.Sites.Where(a => a.isDeleted == 0)
                                    join cc in _context.Cluster.Where(a => a.isDeleted == 0 && (a.clusterId == reg.clusterId || reg.clusterId == -1)) on s.clusterId equals cc.clusterId
                                    join r in _context.Regions2.Where(a=>a.isDeleted == 0 && (a.regionId == reg.regionId || reg.regionId == -1)) on cc.regionId equals r.regionId
-                                   join stech in _context.SitesTechnology on s.siteId equals stech.siteId
                                    join aus in _context.AUSite.Where(a => a.userId == reg.userId || reg.userId == -1) on s.siteId equals aus.siteId
-                                   join aut in _context.AUTechnology.Where(a => a.userId == reg.userId || reg.userId == -1) on stech.techId equals aut.technologyId
                                    select new
                                    {
                                        r.regionId,

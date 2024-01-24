@@ -315,7 +315,7 @@ namespace ActionTrakingSystem.Controllers
                                           }).ToListAsync();
 
 
-                var tilsList = await (from t in _context.TILBulletin.Where(a => a.isDeleted == 0 && a.technicalReviewId != null )
+                var tilsList = await (from t in _context.TILBulletin.Where(a => a.isDeleted == 0)
                                   join c in _context.TILComponent on t.componentId equals c.componentId into all
                                   from aa in all.DefaultIfEmpty()
                                   join d in _context.TILDocumentType on t.documentTypeId equals d.typeId into all2
@@ -552,7 +552,8 @@ namespace ActionTrakingSystem.Controllers
                                         select new
                                         {
                                             equipmentId = e.eqId,
-                                            
+                                            aa.siteId,
+                                            aa.siteName,
                                             unit = bb.unit + "-" + aa.siteName,
                                            
                                         }).ToListAsync();
@@ -588,7 +589,7 @@ namespace ActionTrakingSystem.Controllers
         ////            til.modifiedBy = reg.userId;
         ////            til.modifiedOn = DateTime.Now;
         ////            til.tilAction = reg.action.tilAction;
-                 
+
         ////            if (til.targetDate !=null)
         ////            {
         ////                DateTime todayDate = DateTime.Now;
@@ -612,9 +613,9 @@ namespace ActionTrakingSystem.Controllers
         ////                                     select a).FirstOrDefaultAsync();
         ////                    til.ddtCalc = (ddt.score * 100).ToString() + "%";
         ////                }
-                     
+
         ////            }
-                    
+
         ////            _context.SaveChanges();
 
         ////            return Ok(reg.action);
@@ -677,6 +678,52 @@ namespace ActionTrakingSystem.Controllers
         ////    }
         ////}
         [Authorize]
+        [HttpPost("copyAction")]
+        public async Task<IActionResult> CopyAction(copyActionDto reg)
+        {
+            try
+            {
+               
+                    TILActionPackage tils = new TILActionPackage();
+                    tils.actionDescription = reg.data.actionDescription;
+                    tils.patComments = reg.data.patComments;
+                    tils.recurrence = reg.data.recurrence;
+                    tils.budgetSourceId = reg.data.budgetSourceId;
+                    tils.actionTitle = reg.data.actionTitle;
+                    tils.expectedBudget = reg.data.expectedBudget;
+                    tils.actionClosureGuidelinesId = reg.data.actionClosureGuidelinesId;
+                    tils.tilId = reg.data.tilId;
+                    tils.outageId = reg.data.outageId;
+                    tils.priorityId = reg.data.priorityId;
+                    tils.reviewStatusId = reg.data.reviewStatusId;
+                    tils.createdBy = reg.userId;
+                    tils.createdOn = DateTime.Now;
+                    tils.isDeleted = 0;
+                    _context.Add(tils);
+                    _context.SaveChanges();
+                List<TAPEquipment> equipment = await (from a in _context.TAPEquipment.Where(a => a.tapId == reg.data.packageId)
+                                       select a).ToListAsync();
+
+                    for (var i = 0; i < equipment.Count; i++)
+                    {
+                        TAPEquipment eq = new TAPEquipment();
+                        eq.tapId = tils.packageId;
+                        eq.eqId = equipment[i].eqId;
+                        eq.isDeleted = 0;
+                        _context.Add(eq);
+                        //SaveTILUserAccess(_context, eq.tapId, eq.eqId, reg.userId);
+                    }
+                    _context.SaveChanges();
+                    return Ok(reg.data);
+                
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [Authorize]
         [HttpPost("saveUsersActions")]
         public async Task<IActionResult> UpdateAction(assignTilUser reg)
         {
@@ -712,9 +759,10 @@ namespace ActionTrakingSystem.Controllers
                     //        _context.Add(user);
                     //    }
                     //}
+                    _context.Database.ExecuteSqlCommand("DELETE FROM TAPEquipment WHERE tapId = @tapID", new SqlParameter("tapID", reg.data.action.packageId));
+
                     if (reg.data.equipment.Length > 0)
                     {
-                        _context.Database.ExecuteSqlCommand("DELETE FROM TAPEquipment WHERE tapId = @tapID", new SqlParameter("tapID", reg.data.action.packageId));
                         for (var i = 0; i < reg.data.equipment.Length; i++)
                         {
                             TAPEquipment eq = new TAPEquipment();

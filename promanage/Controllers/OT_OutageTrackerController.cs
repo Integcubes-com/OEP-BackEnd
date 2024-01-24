@@ -17,7 +17,7 @@ namespace ActionTrakingSystem.Controllers
     {
         private readonly DAL _context;
         private readonly IWebHostEnvironment _hostingEnvironment;
-        public OT_OutageTrackerController(DAL context, IWebHostEnvironment hostingEnvironment) 
+        public OT_OutageTrackerController(DAL context, IWebHostEnvironment hostingEnvironment)
         {
             _context = context;
             _hostingEnvironment = hostingEnvironment;
@@ -28,11 +28,10 @@ namespace ActionTrakingSystem.Controllers
         {
             try
             {
-                var userData = await (from a in _context.Sites.Where(a => a.siteId == reg.action.siteId)
-                                      join c in _context.AUSite.Where(a => a.isDeleted == 0) on a.siteId equals c.siteId
+                var userData = await (from c in _context.AUSite.Where(a => a.isDeleted == 0 && a.siteId == reg.action.siteId)
                                       join d in _context.AppUser.Where(a => a.isDeleted == 0) on c.userId equals d.userId
                                       join z in _context.OT_IActionOwnerUser on d.userId equals z.userId
-                                      join b in _context.OT_PhaseReadinessDescriptionAO.Where(a => a.phaseReadId == reg.action.phaseReadId) on z.actionOwnerId equals b.actionOwnerId
+                                      join b in _context.OT_PhaseReadinessDescriptionAO on new { z.actionOwnerId, p = reg.action.phaseReadId } equals new { b.actionOwnerId, p = b.phaseReadId }
                                       select new
                                       {
                                           d.userId,
@@ -48,7 +47,7 @@ namespace ActionTrakingSystem.Controllers
                                             a.progress,
                                             a.progressId,
                                         }).FirstOrDefaultAsync();
-                List <OT_DateCalc> monthList = new List<OT_DateCalc>();
+                List<OT_DateCalc> monthList = new List<OT_DateCalc>();
                 var monthDifference = CalculateMonthDifference(reg.action.startDate, reg.action.endDate);
                 if (monthDifference == 0)
                 {
@@ -67,7 +66,7 @@ namespace ActionTrakingSystem.Controllers
                         monthList.Add(c);
                     }
                 }
-               
+
                 var obj = new
                 {
                     outageData,
@@ -135,18 +134,18 @@ namespace ActionTrakingSystem.Controllers
         {
             try
             {
-                var phaseNumber = await(from a in _context.OT_Phase.Where(a=>a.isDeleted == 0)
-                                        select new
-                                        {
-                                            a.phaseId,
-                                            a.phaseNumber
-                                        }).OrderBy(b=>b.phaseNumber).ToListAsync();
-                var outage = await (from a in _context.OT_ISiteOutages.Where(a => a.isDeleted == 0)
+                var phaseNumber = await (from a in _context.OT_Phase.Where(a => a.isDeleted == 0)
                                          select new
                                          {
-                                             a.outageId,
-                                             a.outageTitle
-                                         }).ToListAsync();
+                                             a.phaseId,
+                                             a.phaseNumber
+                                         }).OrderBy(b => b.phaseNumber).ToListAsync();
+                var outage = await (from a in _context.OT_ISiteOutages.Where(a => a.isDeleted == 0)
+                                    select new
+                                    {
+                                        a.outageId,
+                                        a.outageTitle
+                                    }).ToListAsync();
                 var status = await (from a in _context.OT_IStatus
                                     select new
                                     {
@@ -186,65 +185,154 @@ namespace ActionTrakingSystem.Controllers
             {
                 DateTime filterDate = new DateTime(2023, 12, 31);
                 var outagesInfo = await (from d in _context.OT_Phase.Where(a => a.isDeleted == 0)
-                                     join e in _context.OT_PhaseDuration.Where(a => a.isDeleted == 0) on d.phaseId equals e.phaseId
-                                     select new
-                                     {
-                                         d.phaseId,
-                                         e.outageId,
-                                         e.durationMonths
-                                     }
+                                         join e in _context.OT_PhaseDuration.Where(a => a.isDeleted == 0) on d.phaseId equals e.phaseId
+                                         select new
+                                         {
+                                             d.phaseId,
+                                             e.outageId,
+                                             e.durationMonths
+                                         }
                                      ).ToListAsync();
 
-                var actions = await (from a in _context.OT_IActionOwnerUser.Where(a => a.userId == reg.userId )
-                                     join u in _context.OT_IActionOwner.Where(a => a.isDeleted == 0) on a.actionOwnerId equals u.actionOwnerId
-                                     join b in _context.OT_PhaseReadinessDescriptionAO.Where(a => a.isDeleted == 0) on a.actionOwnerId equals b.actionOwnerId
-                                     join c in _context.OT_PhaseReadinessDescription.Where(a => a.isDeleted == 0) on b.phaseReadId equals c.phaseReadId
-                                     join d in _context.OT_Phase.Where(a => a.isDeleted == 0 && (reg.filter.phaseNumber == -1 || a.phaseId == reg.filter.phaseNumber)) on c.phaseId equals d.phaseId
-                                     join e in _context.OT_PhaseDuration.Where(a => a.isDeleted == 0) on d.phaseId equals e.phaseId
-                                     join f in _context.OT_SiteNextOutages.Where(a => a.isDeleted == 0 && a.nextOutageDate > filterDate) on e.outageId equals f.outageId
-                                     join ff in _context.OT_ISiteOutages.Where(a => a.isDeleted == 0 && (reg.filter.outageId == -1 || a.outageId == reg.filter.outageId)) on f.outageId equals ff.outageId
-                                     join eq in _context.OT_SiteEquipment.Where(a => a.isDeleted == 0) on f.equipmentId equals eq.equipmentId
-                                     join g in _context.Sites.Where(a => a.isDeleted == 0 && (reg.filter.siteId == -1 || a.siteId == reg.filter.siteId) && (a.otValid == 1)) on eq.siteId equals g.siteId
-                                     join z in _context.Country on g.countryId equals z.countryId
-                                     join zz in _context.Cluster on z.clustedId equals zz.clusterId
-                                     join r in _context.Regions2 on zz.regionId equals r.regionId
-                                     join h in _context.AUSite.Where(a => a.userId == reg.userId) on g.siteId equals h.siteId
-                                     join i in _context.OT_PhaseOutageTracker.Where(a => a.isDeleted == 0) on new { d.phaseId, eq.equipmentId, c.phaseReadId, f.nextOutageDate } equals new { i.phaseId, i.equipmentId, i.phaseReadId, nextOutageDate = i.outageDate } into all
-                                     from ii in all.DefaultIfEmpty()
-                                     join j in _context.OT_IStatus on ii.statusId equals j.statusId into all2
-                                     from jj in all2.DefaultIfEmpty()
-                                     select new OutageTrackerModel
-                                     {
-                                         siteId = g.siteId,
-                                         siteTitle = g.siteName,
-                                         phaseId = d.phaseId,
-                                         phaseNumber = d.phaseNumber,
-                                         phaseTitle = d.phaseTitle,
-                                         phaseReadId = c.phaseReadId,
-                                         phaseReadDesc = c.phaseReadDesc,
-                                         clusterId =  zz.clusterId,
-                                         clusterTitle = zz.clusterTitle,
-                                         //remarks = ii.remarks,
-                                         //filePath = ii.filePath,
-                                         //fileName = ii.fileName,
-                                         //progress = ii.progress,
-                                         notApplicable = ii.notApplicable == null || ii.notApplicable == 0 ? false : true,
-                                         statusId = jj.statusId == null ? 1 : jj.statusId,
-                                         statusTitle = jj.statusTitle == null ? "Pending" : jj.statusTitle,
-                                         potId = ii.potId == null ? -1 : ii.potId,
-                                         //isCompleted = ii.isCompleted == null || ii.isCompleted == 0 ? false:true,
-                                         snoId = f.snoId,
-                                         outageId = f.outageId,
-                                         nextOutageDate = f.nextOutageDate,
-                                         outageTitle = ff.outageTitle,
-                                         phaseDurId = e.phaseDurId,
-                                         durationMonths = e.durationMonths,
-                                         equipmentId = eq.equipmentId,
-                                         unit = eq.unit,
-                                         startDate = DateTime.Now,
-                                         endDate = DateTime.Now,
-                                     }
+                var actions2 = await (from a in _context.OT_IActionOwnerUser.Where(a => a.userId == reg.userId)
+                                      join u in _context.OT_IActionOwner.Where(a => a.isDeleted == 0) on a.actionOwnerId equals u.actionOwnerId
+                                      join b in _context.OT_PhaseReadinessDescriptionAO.Where(a => a.isDeleted == 0) on a.actionOwnerId equals b.actionOwnerId
+                                      join c in _context.OT_PhaseReadinessDescription.Where(a => a.isDeleted == 0) on b.phaseReadId equals c.phaseReadId
+                                      join d in _context.OT_Phase.Where(a => a.isDeleted == 0 && (reg.filter.phaseNumber == -1 || a.phaseId == reg.filter.phaseNumber)) on c.phaseId equals d.phaseId
+                                      join e in _context.OT_PhaseDuration.Where(a => a.isDeleted == 0) on d.phaseId equals e.phaseId
+                                      join f in _context.OT_SiteNextOutages.Where(a => a.isDeleted == 0 && a.nextOutageDate > filterDate) on e.outageId equals f.outageId
+                                      join ff in _context.OT_ISiteOutages.Where(a => a.isDeleted == 0 && (reg.filter.outageId == -1 || a.outageId == reg.filter.outageId)) on f.outageId equals ff.outageId
+                                      join eq in _context.OT_SiteEquipment.Where(a => a.isDeleted == 0) on f.equipmentId equals eq.equipmentId
+                                      join g in _context.Sites.Where(a => a.isDeleted == 0 && (reg.filter.siteId == -1 || a.siteId == reg.filter.siteId) && (a.otValid == 1)) on eq.siteId equals g.siteId
+                                      join z in _context.Country on g.countryId equals z.countryId
+                                      join zz in _context.Cluster on z.clustedId equals zz.clusterId
+                                      join r in _context.Regions2 on zz.regionId equals r.regionId
+                                      join h in _context.AUSite.Where(a => a.userId == reg.userId) on g.siteId equals h.siteId
+                                      join i in _context.OT_PhaseOutageTracker.Where(a => a.isDeleted == 0) on new { d.phaseId, eq.equipmentId, c.phaseReadId, f.nextOutageDate } equals new { i.phaseId, i.equipmentId, i.phaseReadId, nextOutageDate = i.outageDate } into all
+                                      from ii in all.DefaultIfEmpty()
+                                      join j in _context.OT_IStatus on ii.statusId equals j.statusId into all2
+                                      from jj in all2.DefaultIfEmpty()
+                                      select new OutageTrackerModel
+                                      {
+                                          siteId = g.siteId,
+                                          siteTitle = g.siteName,
+                                          phaseId = d.phaseId,
+                                          phaseNumber = d.phaseNumber,
+                                          phaseTitle = d.phaseTitle,
+                                          phaseReadId = c.phaseReadId,
+                                          phaseReadDesc = c.phaseReadDesc,
+                                          clusterId = zz.clusterId,
+                                          clusterTitle = zz.clusterTitle,
+                                          //remarks = ii.remarks,
+                                          //filePath = ii.filePath,
+                                          //fileName = ii.fileName,
+                                          //progress = ii.progress,
+                                          notApplicable = ii.notApplicable == null || ii.notApplicable == 0 ? false : true,
+                                          statusId = jj.statusId == null ? 1 : jj.statusId,
+                                          statusTitle = jj.statusTitle == null ? "Pending" : jj.statusTitle,
+                                          potId = ii.potId == null ? -1 : ii.potId,
+                                          //isCompleted = ii.isCompleted == null || ii.isCompleted == 0 ? false:true,
+                                          snoId = f.snoId,
+                                          outageId = f.outageId,
+                                          nextOutageDate = f.nextOutageDate,
+                                          outageTitle = ff.outageTitle,
+                                          phaseDurId = e.phaseDurId,
+                                          durationMonths = e.durationMonths,
+                                          equipmentId = eq.equipmentId,
+                                          unit = eq.unit,
+                                          startDate = DateTime.Now,
+                                          endDate = DateTime.Now,
+                                      }
                                     ).Distinct().OrderBy(a => a.nextOutageDate).ToListAsync();
+
+                var combinedUser = (from k in actions2
+                                    join c in _context.AUSite.Where(a => a.isDeleted == 0) on k.siteId equals c.siteId
+                                    join d in _context.AppUser.Where(a => a.isDeleted == 0) on c.userId equals d.userId
+                                    join z in _context.OT_IActionOwnerUser on d.userId equals z.userId
+                                    join b in _context.OT_PhaseReadinessDescriptionAO on new { ActionOwnerId = z.actionOwnerId, k.phaseReadId } equals new { ActionOwnerId = b.actionOwnerId, b.phaseReadId }
+                                    select new
+                                    {
+                                        userName = d.userName,
+                                        k.siteId,
+                                        k.siteTitle,
+                                        k.phaseId,
+                                        k.phaseNumber,
+                                        k.phaseTitle,
+                                        k.phaseReadId,
+                                        k.phaseReadDesc,
+                                        k.clusterId,
+                                        k.clusterTitle,
+                                        k.notApplicable,
+                                        k.statusId,
+                                        k.statusTitle,
+                                        k.potId,
+                                        k.snoId,
+                                        k.outageId,
+                                        k.nextOutageDate,
+                                        k.outageTitle,
+                                        k.phaseDurId,
+                                        k.durationMonths,
+                                        k.equipmentId,
+                                        k.unit,
+                                        k.startDate,
+                                        k.endDate,
+                                    }).Distinct().ToList();
+
+                var actions = combinedUser
+.GroupBy(k => new
+{
+    k.siteId,
+    k.siteTitle,
+    k.phaseId,
+    k.phaseNumber,
+    k.phaseTitle,
+    k.phaseReadId,
+    k.phaseReadDesc,
+    k.clusterId,
+    k.clusterTitle,
+    k.notApplicable,
+    k.statusId,
+    k.statusTitle,
+    k.potId,
+    k.snoId,
+    k.outageId,
+    k.nextOutageDate,
+    k.outageTitle,
+    k.phaseDurId,
+    k.durationMonths,
+    k.equipmentId,
+    k.unit,
+    k.startDate,
+    k.endDate
+})
+.Select(group => new OutageTrackerModel
+{
+    siteId = group.FirstOrDefault().siteId,
+    siteTitle = group.FirstOrDefault().siteTitle,
+    phaseId = group.FirstOrDefault().phaseId,
+    phaseNumber = group.FirstOrDefault().phaseNumber,
+    phaseTitle = group.FirstOrDefault().phaseTitle,
+    phaseReadId = group.FirstOrDefault().phaseReadId,
+    phaseReadDesc = group.FirstOrDefault().phaseReadDesc,
+    clusterId = group.FirstOrDefault().clusterId,
+    clusterTitle = group.FirstOrDefault().clusterTitle,
+    notApplicable = group.FirstOrDefault().notApplicable,
+    statusId = group.FirstOrDefault().statusId,
+    statusTitle = group.FirstOrDefault().statusTitle,
+    potId = group.FirstOrDefault().potId,
+    snoId = group.FirstOrDefault().snoId,
+    outageId = group.FirstOrDefault().outageId,
+    nextOutageDate = group.FirstOrDefault().nextOutageDate,
+    outageTitle = group.FirstOrDefault().outageTitle,
+    phaseDurId = group.FirstOrDefault().phaseDurId,
+    durationMonths = group.FirstOrDefault().durationMonths,
+    equipmentId = group.FirstOrDefault().equipmentId,
+    unit = group.FirstOrDefault().unit,
+    startDate = group.FirstOrDefault().startDate,
+    endDate = group.FirstOrDefault().endDate,
+    name = string.Join(", ", group.Select(u => u.userName).Distinct())
+}).ToList();
+
 
                 var todayDate = DateTime.Now;
                 for (var a = 0; a < actions.Count; a++)
@@ -256,7 +344,7 @@ namespace ActionTrakingSystem.Controllers
                     {
                         actions[a].startDate = actions[a].nextOutageDate.AddMonths(-(int)((actions[a].durationMonths == null) ? 0 : actions[a].durationMonths));
                     }
-                    if (actions[a].durationMonths < 0)
+                    else if (actions[a].durationMonths < 0)
                     {
                         actions[a].startDate = actions[a].nextOutageDate.AddMonths(-(int)((uniqueNegativeEquipments.Count == 0) ? 0 : uniqueNegativeEquipments[0].durationMonths));
                     }
@@ -266,9 +354,9 @@ namespace ActionTrakingSystem.Controllers
                     {
                         actions[a].endDate = obd.AddMonths((int)dds);
                     }
-                    if (actions[a].durationMonths < 0)
+                    else if (actions[a].durationMonths < 0)
                     {
-                        actions[a].endDate = actions[a].startDate.AddMonths(-(int)((actions[a].durationMonths == null) ? 0 : ((uniqueNegativeEquipments.Count == 0) ? actions[a].durationMonths : ( actions[a].durationMonths - uniqueNegativeEquipments[0].durationMonths))));
+                        actions[a].endDate = actions[a].startDate.AddMonths(-(int)((actions[a].durationMonths == null) ? 0 : ((uniqueNegativeEquipments.Count == 0) ? actions[a].durationMonths : (actions[a].durationMonths - uniqueNegativeEquipments[0].durationMonths))));
                     }
                     var diffOfMonths = ((actions[a].nextOutageDate.Year - todayDate.Year) * 12) + actions[a].nextOutageDate.Month - todayDate.Month;
                     if (diffOfMonths > actions[a].durationMonths)
@@ -277,37 +365,7 @@ namespace ActionTrakingSystem.Controllers
                         a--;
                     }
                 }
-                //for(var a = 0; a<actions.Count; a++)
-                //{
-                //    var uniqueEquipments = outagesInfo.Where(b => b.outageId == actions[a].outageId && b.durationMonths < actions[a].durationMonths).OrderByDescending(a=>a.durationMonths).ToList();
-                //    var uniqueNegativeEquipments = outagesInfo.Where(b => b.outageId == actions[a].outageId && b.durationMonths > actions[a].durationMonths && b.durationMonths < 0).OrderByDescending(a => a.durationMonths).ToList();
-
-                //    if (actions[a].durationMonths > 0)
-                //    {
-                //        actions[a].startDate = actions[a].nextOutageDate.AddMonths(-(int)((actions[a].durationMonths == null) ? 0 : actions[a].durationMonths));
-                //    }
-                //    if (actions[a].durationMonths < 0)
-                //    {
-                //        actions[a].startDate = actions[a].nextOutageDate.AddMonths(-(int)((uniqueNegativeEquipments.Count == 0) ? 0 : actions[a].durationMonths));
-                //    }
-                //    DateTime obd = actions[a].startDate;
-                //    var dds = (uniqueEquipments.Count > 0?(actions[a].durationMonths - ((uniqueEquipments.FirstOrDefault().durationMonths == 0)?0: uniqueEquipments.FirstOrDefault().durationMonths)) :0);
-                //    if (actions[a].durationMonths > 0)
-                //    {
-                //        actions[a].endDate = obd.AddMonths((int)dds);
-                //    }
-                //    if (actions[a].durationMonths < 0)
-                //    {
-                //        actions[a].endDate = actions[a].startDate.AddMonths(-(int)((actions[a].durationMonths == null) ? 0 : actions[a].durationMonths));
-                //    }
-                //    var diffOfMonths = ((actions[a].nextOutageDate.Year - todayDate.Year) * 12) + actions[a].nextOutageDate.Month - todayDate.Month;
-                //    if (diffOfMonths > actions[a].durationMonths)
-                //    {
-                //        actions.RemoveAt(a);
-                //        a--;
-                //    }    
-                //}
-                return Ok(actions.Where(a=>reg.filter.status == -1 || a.statusId == reg.filter.status));
+                return Ok(actions.Where(a => reg.filter.status == -1 || a.statusId == reg.filter.status));
             }
             catch (Exception e)
             {
@@ -361,7 +419,7 @@ namespace ActionTrakingSystem.Controllers
                             ot.statusId = 2;
                     }
                     _context.SaveChanges();
-                    reg.action.monthlyData.progressId = p.progressId;  
+                    reg.action.monthlyData.progressId = p.progressId;
                 }
                 else
                 {
@@ -382,7 +440,7 @@ namespace ActionTrakingSystem.Controllers
                     ot.modifiedBy = reg.userId;
                     _context.SaveChanges();
                     var p = await (from a in _context.OT_PhaseOutageTrackerProgress.Where(a => (a.progressId == reg.action.monthlyData.progressId))
-                                    select a).FirstOrDefaultAsync();
+                                   select a).FirstOrDefaultAsync();
                     if (p != null)
                     {
                         p.monthId = reg.action.monthlyData.monthId;
@@ -392,7 +450,7 @@ namespace ActionTrakingSystem.Controllers
                         p.remarks = reg.action.monthlyData.remarks;
                         p.createdBy = reg.userId;
                         p.createdOn = DateTime.Now;
-                        _context.SaveChanges();  
+                        _context.SaveChanges();
                     }
                     else
                     {

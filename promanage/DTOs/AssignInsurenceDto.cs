@@ -34,6 +34,7 @@ namespace ActionTrakingSystem.DTOs
         public string regionList { get; set; }
         public string siteList { get; set; }
         public string sourceList { get; set; }
+        public string clusterList { get; set; }
         public string department { get; set; }
         public string priorityList { get; set; }
 
@@ -70,10 +71,12 @@ namespace ActionTrakingSystem.DTOs
         public string regionList { get; set; }
         public string siteList { get; set; }
         public string sourceList { get; set; }
+        public string quaterList { get; set; }
         public string statusList { get; set; }
         public string dayList { get; set; }
         public string companyList { get; set; }
         public string priorityList { get; set; }
+        public string clusterList { get; set; }
     }
     public class iatFileDto
     {
@@ -164,5 +167,10 @@ namespace ActionTrakingSystem.DTOs
         public string regionTitle { get; set; }
         public int? sourceId { get; set; }
         public string sourceTitle { get; set; }
+        public string adminComment { get; set; }
+        public string reviewerComment { get; set; }
+        public bool? isCompleted { get; set; }
+        public bool? rework { get; set; }
+        public bool? clusterReviewed { get; set; }
     }
 }

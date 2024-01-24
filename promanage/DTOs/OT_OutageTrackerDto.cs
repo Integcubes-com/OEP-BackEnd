@@ -11,7 +11,7 @@ namespace ActionTrakingSystem.DTOs
         public int phaseId { get; set; }
         public int phaseNumber { get; set; }
         public string phaseTitle { get; set; }
-
+        public string name { get; set; }
         public int? clusterId { get; set; }
         public string clusterTitle { get; set; }
         public int phaseReadId { get; set; }
