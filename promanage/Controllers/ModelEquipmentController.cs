@@ -20,8 +20,6 @@ namespace ActionTrakingSystem.Controllers
         {
             _context = context;
         }
-
-
         [Authorize]
         [HttpPost("getInterfaces")]
         public async Task<IActionResult> GetInterfaces(UserIdDto reg)
@@ -101,7 +99,6 @@ namespace ActionTrakingSystem.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
         [Authorize]
         [HttpPost("saveModelEquipment")]
         public async Task<IActionResult> SaveEquipment(SiteModelSaveDto reg)

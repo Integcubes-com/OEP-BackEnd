@@ -124,7 +124,7 @@ namespace ActionTrakingSystem.Controllers
                     WH_SiteNextOutages sn = new WH_SiteNextOutages();
                     sn.equipmentId = reg.siteNextOutage.equipmentId;
                     sn.outageId = reg.siteNextOutage.outageId;
-                    sn.nextOutageDate = reg.siteNextOutage.nextOutageDate;
+                    sn.nextOutageDate = DateTime.Parse(reg.siteNextOutage.nextOutageDate);
                     sn.runningHours = reg.siteNextOutage.runningHours;
                     sn.outageDurationInDays = reg.siteNextOutage.outageDurationInDays;
                     sn.createdOn = DateTime.Now;
@@ -141,7 +141,7 @@ namespace ActionTrakingSystem.Controllers
                                                    select a).FirstOrDefaultAsync();
                     sn.equipmentId = reg.siteNextOutage.equipmentId;
                     sn.outageId = reg.siteNextOutage.outageId;
-                    sn.nextOutageDate = reg.siteNextOutage.nextOutageDate;
+                    sn.nextOutageDate = DateTime.Parse(reg.siteNextOutage.nextOutageDate);
                     sn.runningHours = reg.siteNextOutage.runningHours;
                     sn.outageDurationInDays = reg.siteNextOutage.outageDurationInDays;
                     sn.modifiedOn = DateTime.Now;

@@ -33,6 +33,7 @@ namespace ActionTrakingSystem.Controllers
                                          join c in _context.Country on s.countryId equals c.countryId
                                          join cc in _context.Cluster.Where(a => reg.filter.clusterId == -1 || a.clusterId == reg.filter.clusterId) on s.clusterId equals cc.clusterId
                                          join r in _context.Regions2.Where(a => reg.filter.regionId == -1 || a.regionId == reg.filter.regionId) on cc.regionId equals r.regionId
+                                         join aus in _context.AUSite.Where(a => a.userId == reg.userId) on s.siteId equals aus.siteId
                                          select new
                                          {
                                              a.snoId,
@@ -117,7 +118,7 @@ namespace ActionTrakingSystem.Controllers
                     OT_SiteNextOutages sn = new OT_SiteNextOutages();
                     sn.equipmentId = reg.siteNextOutage.equipmentId;
                     sn.outageId = reg.siteNextOutage.outageId;
-                    sn.nextOutageDate = reg.siteNextOutage.nextOutageDate;
+                    sn.nextOutageDate = DateTime.Parse(reg.siteNextOutage.nextOutageDate); 
                     sn.createdOn = DateTime.Now;
                     sn.outageDurationInDays = reg.siteNextOutage.outageDurationInDays;
                     sn.createdBy = reg.userId;
@@ -133,7 +134,7 @@ namespace ActionTrakingSystem.Controllers
                                                 select a).FirstOrDefaultAsync();
                     sn.equipmentId = reg.siteNextOutage.equipmentId;
                     sn.outageId = reg.siteNextOutage.outageId;
-                    sn.nextOutageDate = reg.siteNextOutage.nextOutageDate;
+                    sn.nextOutageDate = DateTime.Parse(reg.siteNextOutage.nextOutageDate);
                     sn.outageDurationInDays = reg.siteNextOutage.outageDurationInDays;
                     sn.modifiedOn = DateTime.Now;
                     sn.modifiedBy = reg.userId;

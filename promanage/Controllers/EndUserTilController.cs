@@ -311,7 +311,7 @@ namespace ActionTrakingSystem.Controllers
                                         tap.outageId,
                                         unitStatus = cc.title,
                                         unitStatusId = cc.outageTypeId==null?-1: cc.outageTypeId,
-                                        evidenceTitle = _ev.evidenceTitle,
+                                        evidenceTitle = _ev.evidenceTitle == null ? "No" : _ev.evidenceTitle,
                                         icc.clusterId,
                                         icc.clusterTitle,
                                         isCompleted = a.isCompleted == 1 ? true : false,
@@ -404,8 +404,7 @@ namespace ActionTrakingSystem.Controllers
         public async Task<IActionResult> GetTilPackage(EUFilterList reg)
         {
             try
-            {
-                
+            {                
                 List<int> RegionIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.regionList))
                     RegionIds = (reg.regionList.Split(',').Select(Int32.Parse).ToList());
@@ -557,7 +556,7 @@ namespace ActionTrakingSystem.Controllers
                                         tap.outageId,
                                         unitStatus = cc.title,
                                         unitStatusId = cc.outageTypeId==null?-1: cc.outageTypeId,
-                                        evidenceTitle = _ev.evidenceTitle,
+                                        evidenceTitle = _ev.evidenceTitle == null?"No": _ev.evidenceTitle,
                                         icc.clusterId,
                                         icc.clusterTitle,
                                         isCompleted = a.isCompleted == 1 ? true : false,
@@ -583,8 +582,8 @@ namespace ActionTrakingSystem.Controllers
                         a.tapDescription,
                         a.actionDescription,
                         a.finalImpScore,
-                        statusId= DaysToTargetCalculation.CalculateStatusId(a.finalImpScore, a.isCompleted, a.rework),
-                        statustitle= DaysToTargetCalculation.CalculateStatusTitle(a.finalImpScore, a.isCompleted, a.rework),
+                        statusId = DaysToTargetCalculation.CalculateStatusId(a.finalImpScore, a.isCompleted, a.rework),
+                        statustitle = DaysToTargetCalculation.CalculateStatusTitle(a.finalImpScore, a.isCompleted, a.rework),
                         a.tilActionTrackerId,
                         a.tapId,
                         a.tilAction,
@@ -603,7 +602,7 @@ namespace ActionTrakingSystem.Controllers
                         a.budgetTitle,
                         a.partServiceId,
                         a.partServiceTitle,
-                        a.planningId,
+                        planningId = a.planningId == null ? -1 : a.planningId,
                         a.planningTitle,
                         a.finalImplementationTitle,
                         a.finalImplementationId,
@@ -661,13 +660,13 @@ namespace ActionTrakingSystem.Controllers
                     til.clusterReviewed = (int)(reg.action.clusterReviewed == true ? 1 : 0);
                     til.siteStatusDetail = reg.action.siteStatusDetail;
                     til.adminComment = reg.action.adminComment;
-                    til.partsServiceId = reg.action.partServiceId;
+                    til.partsServiceId = reg.action.partServiceId == null ? -1 : reg.action.partServiceId ?? -1;
                     til.tapId = (int)reg.action.tapId;
-                    til.finalImplementationId = reg.action.finalImplementationId == -1 ? null: reg.action.finalImplementationId;
-                    til.evidenceId = reg.action.evidenceId;
-                    til.sapPlanningId = reg.action.planningId;
+                    til.finalImplementationId = reg.action.finalImplementationId == null ? -1: reg.action.finalImplementationId ?? -1;
+                    til.evidenceId = reg.action.evidenceId == null ? -1 : reg.action.evidenceId ?? -1;
+                    til.sapPlanningId = reg.action.planningId == null ? -1 : reg.action.planningId ?? -1;
                     til.targetDate = reg.action.targetDate;
-                    til.budgetId = reg.action.budgetId;
+                    til.budgetId = reg.action.budgetId == null ? -1 : reg.action.budgetId ?? -1;
                     til.siteEquipmentId = (int)reg.action.siteEquipmentId;
                     if (reg.action.assignedToId != null)
                     {
@@ -680,9 +679,9 @@ namespace ActionTrakingSystem.Controllers
                     TASapPlanning sapScore = new TASapPlanning();
                     TAPPriority priorityScore = new TAPPriority();
                     TAEvidence evidenceScore = new TAEvidence();
-                    if (reg.action.budgetId != null)
+                    if (til.budgetId != null && til.budgetId != -1)
                     {
-                        budgetScore = (from b in _context.TABudget.Where(a => a.budgetId == reg.action.budgetId)
+                        budgetScore = (from b in _context.TABudget.Where(a => a.budgetId == til.budgetId)
                                        select b).FirstOrDefault();
                         til.budgetCalc = (budgetScore.score * 100).ToString() + "%";
                     }
@@ -690,9 +689,9 @@ namespace ActionTrakingSystem.Controllers
                     {
                         til.budgetCalc = "0%";
                     }
-                    if (til.finalImplementationId != null)
+                    if (til.finalImplementationId != null && til.finalImplementationId != -1)
                     {
-                        implmentationScore = (from b in _context.TAFinalImplementation.Where(a => a.finalImpId == reg.action.finalImplementationId)
+                        implmentationScore = (from b in _context.TAFinalImplementation.Where(a => a.finalImpId == til.finalImplementationId)
                                               select b).FirstOrDefault();
                         til.implementationCalc = (implmentationScore.score * 100).ToString() + "%";
                     }
@@ -702,9 +701,9 @@ namespace ActionTrakingSystem.Controllers
                     }
 
 
-                    if (reg.action.partServiceId != null)
+                    if (til.partsServiceId != null && til.partsServiceId != -1)
                     {
-                        partScore = (from b in _context.TAParts.Where(a => a.partId == reg.action.partServiceId)
+                        partScore = (from b in _context.TAParts.Where(a => a.partId == til.partsServiceId)
                                      select b).FirstOrDefault();
                         til.partsCalc = (partScore.score * 100).ToString() + "%";
                     }
@@ -713,9 +712,9 @@ namespace ActionTrakingSystem.Controllers
                         til.partsCalc = "0%";
                     }
 
-                    if (reg.action.planningId != null)
+                    if (til.sapPlanningId != null && til.sapPlanningId != -1)
                     {
-                        sapScore = (from b in _context.TASapPlanning.Where(a => a.sapPlanningId == reg.action.planningId)
+                        sapScore = (from b in _context.TASapPlanning.Where(a => a.sapPlanningId == til.sapPlanningId)
                                     select b).FirstOrDefault();
                         til.sapCalc = (sapScore.score * 100).ToString() + "%";
                     }
@@ -723,7 +722,7 @@ namespace ActionTrakingSystem.Controllers
                     {
                         til.sapCalc = "0%";
                     }
-                    if (reg.action.priorityId != null)
+                    if (reg.action.priorityId != null && reg.action.priorityId != -1 )
                     {
                         priorityScore = (from b in _context.TAPPriority.Where(a => a.priorityId == reg.action.priorityId)
                                          select b).FirstOrDefault();
@@ -733,9 +732,9 @@ namespace ActionTrakingSystem.Controllers
                     {
                         til.calcPriority = 0;
                     }
-                    if (reg.action.evidenceId != null)
+                    if (til.evidenceId != null && til.evidenceId != -1)
                     {
-                        evidenceScore = (from b in _context.TAEvidence.Where(a => a.evidenceId == reg.action.evidenceId)
+                        evidenceScore = (from b in _context.TAEvidence.Where(a => a.evidenceId == til.evidenceId)
                                          select b).FirstOrDefault();
                         til.evidenceCalc = (evidenceScore.score * 100).ToString() + "%";
                     }
@@ -780,17 +779,17 @@ namespace ActionTrakingSystem.Controllers
                 {
                     TILActionTracker til = new TILActionTracker();
                     til.siteStatusDetail = reg.action.siteStatusDetail;
-                    til.partsServiceId = reg.action.partServiceId;
+                    til.partsServiceId = reg.action.partServiceId == null? -1 : reg.action.partServiceId?? -1;
                     til.tapId = (int)reg.action.tapId;
                     til.adminComment = reg.action.adminComment;
                     til.isCompleted = 0;
                     til.rework = 0;
                     til.clusterReviewed = 0;
-                    til.finalImplementationId = reg.action.finalImplementationId == -1 ? null : reg.action.finalImplementationId;
-                    til.evidenceId = reg.action.evidenceId;
-                    til.sapPlanningId = reg.action.planningId;
+                    til.finalImplementationId = reg.action.finalImplementationId == null ? -1 : reg.action.finalImplementationId??-1;
+                    til.evidenceId = reg.action.evidenceId == null ? -1 : reg.action.evidenceId;
+                    til.sapPlanningId = reg.action.planningId == null ? -1 : reg.action.planningId;
                     til.targetDate = reg.action.targetDate;
-                    til.budgetId = reg.action.budgetId;
+                    til.budgetId = reg.action.budgetId ?? -1;
                     til.siteEquipmentId = (int)reg.action.siteEquipmentId;
                     if (reg.action.assignedToId != null)
                     {
@@ -802,9 +801,9 @@ namespace ActionTrakingSystem.Controllers
                     TASapPlanning sapScore = new TASapPlanning();
                     TAPPriority priorityScore = new TAPPriority();
                     TAEvidence evidenceScore = new TAEvidence();
-                    if (reg.action.budgetId != null)
+                    if (til.budgetId != null && til.budgetId != -1)
                     {
-                        budgetScore = (from b in _context.TABudget.Where(a => a.budgetId == reg.action.budgetId)
+                        budgetScore = (from b in _context.TABudget.Where(a => a.budgetId == til.budgetId)
                                            select b).FirstOrDefault();
                         til.budgetCalc = (budgetScore.score * 100).ToString() + "%";
                     }
@@ -812,9 +811,9 @@ namespace ActionTrakingSystem.Controllers
                     {
                         til.budgetCalc = "0%";
                     }
-                    if(til.finalImplementationId != null)
+                    if(til.finalImplementationId != null && til.finalImplementationId != -1)
                     {
-                        implmentationScore = (from b in _context.TAFinalImplementation.Where(a => a.finalImpId == reg.action.finalImplementationId)
+                        implmentationScore = (from b in _context.TAFinalImplementation.Where(a => a.finalImpId == til.finalImplementationId)
                                                   select b).FirstOrDefault();
                         til.implementationCalc = (implmentationScore.score * 100).ToString() + "%";
                     }
@@ -824,9 +823,9 @@ namespace ActionTrakingSystem.Controllers
                     }
                    
 
-                   if(reg.action.partServiceId != null)
+                   if(til.partsServiceId != null && til.partsServiceId != -1)
                     {
-                        partScore = (from b in _context.TAParts.Where(a => a.partId == reg.action.partServiceId)
+                        partScore = (from b in _context.TAParts.Where(a => a.partId == til.partsServiceId)
                                          select b).FirstOrDefault();
                         til.partsCalc = (partScore.score * 100).ToString() + "%";
                     }
@@ -835,9 +834,9 @@ namespace ActionTrakingSystem.Controllers
                         til.partsCalc = "0%";
                     }
 
-                    if (reg.action.planningId != null )
+                    if (til.sapPlanningId != null && til.sapPlanningId != -1)
                     {
-                        sapScore = (from b in _context.TASapPlanning.Where(a => a.sapPlanningId == reg.action.planningId)
+                        sapScore = (from b in _context.TASapPlanning.Where(a => a.sapPlanningId == til.sapPlanningId)
                                         select b).FirstOrDefault();
                         til.sapCalc = (sapScore.score * 100).ToString() + "%";
                     }
@@ -845,7 +844,7 @@ namespace ActionTrakingSystem.Controllers
                     {
                         til.sapCalc = "0%";
                     }
-                    if(reg.action.priorityId != null )
+                    if(reg.action.priorityId != null && reg.action.priorityId != -1)
                     {
                         priorityScore = (from b in _context.TAPPriority.Where(a => a.priorityId == reg.action.priorityId)
                                              select b).FirstOrDefault();
@@ -855,9 +854,9 @@ namespace ActionTrakingSystem.Controllers
                     {
                         til.calcPriority = 0;
                     }
-                    if (reg.action.evidenceId != null )
+                    if (til.evidenceId != null && til.evidenceId != -1)
                     {
-                        evidenceScore = (from b in _context.TAEvidence.Where(a => a.evidenceId == reg.action.evidenceId)
+                        evidenceScore = (from b in _context.TAEvidence.Where(a => a.evidenceId == til.evidenceId)
                                              select b).FirstOrDefault();
                         til.evidenceCalc = (evidenceScore.score * 100).ToString() + "%";
                     }

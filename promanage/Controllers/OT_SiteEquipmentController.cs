@@ -92,7 +92,7 @@ namespace ActionTrakingSystem.Controllers
                 }).ToList();
 
                 var siteEquipment = await (from se in _context.OT_SiteEquipment.Where(a => a.isDeleted == 0 && (reg.filterObj.modelId == -1 || a.fleetEquipmentId == reg.filterObj.modelId) && (reg.filterObj.siteId == -1 || a.siteId == reg.filterObj.siteId))
-                                           join s in _context.Sites.Where(a=> (a.otValid == 1)) on se.siteId equals s.siteId
+                                           join s in _context.Sites.Where(a=> (a.isDeleted == 0)) on se.siteId equals s.siteId
                                            join stech in _context.SitesTechnology on s.siteId equals stech.siteId
                                            join aus in _context.AUSite.Where(a => a.userId == reg.userId) on s.siteId equals aus.siteId
                                            join aut in _context.AUTechnology.Where(a => a.userId == reg.userId) on stech.techId equals aut.technologyId

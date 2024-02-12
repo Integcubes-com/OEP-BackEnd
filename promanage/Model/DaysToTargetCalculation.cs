@@ -80,7 +80,10 @@ namespace ActionTrakingSystem.Model
                 //}
                 return "Closed";
             }
-               
+               else if (statusId == 4)
+            {
+                return "Implemented";
+            }
             else
             {
                 DateTime startDate = DateTime.Now;
@@ -144,7 +147,7 @@ namespace ActionTrakingSystem.Model
             }
             else if (finalImpScore == 1 && isCompleted == false)
             {
-                return "In Progress";
+                return "Implemented";
             }
             else
             {

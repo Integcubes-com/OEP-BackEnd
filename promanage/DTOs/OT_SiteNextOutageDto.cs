@@ -11,7 +11,7 @@ namespace ActionTrakingSystem.DTOs
         public string unit { get; set; }
         public int outageId { get; set; }
         public string outageTitle { get; set; }
-        public DateTime nextOutageDate { get; set; }
+        public string nextOutageDate { get; set; }
         public decimal runningHours { get; set; }
         public decimal? outageDurationInDays { get; set; }
         public DateTime? actualStartDate { get; set; }
