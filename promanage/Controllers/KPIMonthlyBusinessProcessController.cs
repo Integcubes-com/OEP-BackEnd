@@ -222,14 +222,14 @@ namespace ActionTrakingSystem.Controllers
                 else
                 {
                     var facCalc = (score / factor) * weight;
-                    if (facCalc > weight)
-                    {
-                        cc = weight;
-                    }
-                    else
-                    {
-                        cc = facCalc;
-                    }
+                    //if (facCalc > weight)
+                    //{
+                    //    cc = weight;
+                    //}
+                    //else
+                    //{
+                    cc = facCalc;
+                    //}
                     return cc;
                 }
             }

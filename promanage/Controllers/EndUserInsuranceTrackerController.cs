@@ -315,17 +315,24 @@ namespace ActionTrakingSystem.Controllers
                 List<int> PriorityIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.priorityList))
                     PriorityIds = (reg.priorityList.Split(',').Select(Int32.Parse).ToList());
+                List<int> YearIds = new List<int>();
+                if (!string.IsNullOrEmpty(reg.yearList))
+                    YearIds = (reg.yearList.Split(',').Select(Int32.Parse).ToList());
+                List<string> IssueYearIds = new List<string>();
+                if (!string.IsNullOrEmpty(reg.issueYearList))
+                    IssueYearIds = (reg.issueYearList.Split(',').ToList());
 
                 var nowDate = DateTime.Now;
                 var tracker = await (from iat in _context.InsurenceActionTracker.Where(a => a.isDeleted == 0 &&
-                                     //&& (a.targetDate >= reg.filter.startDate || reg.filter.startDate == null) && (a.targetDate <= reg.filter.endDate || reg.filter.endDate == null) && 
                                      ((SourceIds.Count == 0) || SourceIds.Contains((int)a.sourceId)) &&
                                      ((CompanyIds.Count == 0) || CompanyIds.Contains((int)a.iatCompanyId)) &&
                                      ((StatusIds.Count == 0) || StatusIds.Contains((int)a.iatStatusId)) &&
-                                     ((QuarterIds.Count == 0) || QuarterIds.Contains((int)a.createdOn.Month)))
+                                     ((QuarterIds.Count == 0) || QuarterIds.Contains((int)a.targetDate.Month)) &&
+                                     ((YearIds.Count == 0) || YearIds.Contains((int)a.targetDate.Year)))
                                      join au in _context.AppUser.Where(a => a.isDeleted == 0) on iat.assignedTo equals au.userId into alluser
                                      from auu in alluser.DefaultIfEmpty()
-                                     join ir in _context.InsuranceRecommendations.Where(sd => sd.isDeleted == 0 && ((PriorityIds.Count == 0) || PriorityIds.Contains((int)sd.priorityId))) on iat.recommendationId equals ir.irId
+                                     join ir in _context.InsuranceRecommendations.Where(sd => sd.isDeleted == 0 && ((PriorityIds.Count == 0) || PriorityIds.Contains((int)sd.priorityId))
+                                     && ((IssueYearIds.Count == 0) || IssueYearIds.Contains(sd.year))) on iat.recommendationId equals ir.irId
                                      join ip in _context.InsuranceRecPriority on ir.priorityId equals ip.ipId
                                      join ns in _context.InsuranceRecNomacStatus on ir.nomacStatusId equals ns.nomacStatusId
                                      join insurStatus in _context.InsuranceRecInsurenceStatus on ir.insuranceStatusId equals insurStatus.insurenceStatusId
@@ -357,6 +364,8 @@ namespace ActionTrakingSystem.Controllers
                                      from rvpp in allrege.DefaultIfEmpty()
                                      join ds in _context.IATrackingDaysStatus on iat.dayStatus equals ds.iatDayStatusId into all5
                                      from dsd in all5.DefaultIfEmpty()
+                                     join uxx in _context.AppUser on iat.actionClosedBy equals uxx.userId into all90
+                                     from uxxx in all90.DefaultIfEmpty()
                                      where (s.insurancePOCId == reg.userId || rege.executiveDirector == reg.userId || rvpp.userId == reg.userId || cnvpp.userId == reg.userId || cn.executiveDirector == reg.userId ||
                                     (iat == null ? -1 : iat.assignedTo) == reg.userId || reg.userId == 22 || reg.userId == 1)
                                      select new
@@ -414,6 +423,8 @@ namespace ActionTrakingSystem.Controllers
                                          icc.clusterTitle,
                                          //reportAttahced = iatrr.iatFileId == null ? false : true,
                                          //reportName = iatrr.fileName,
+                                         iat.actionClosedBy,
+                                         actionClosedTitle = uxxx.firstName + " " + uxxx.lastName,
                                      }
                     ).Distinct().OrderByDescending(a => a.insurenceActionTrackerId).ToListAsync();
                 var daysToTargetList = tracker.Select(s => new
@@ -469,6 +480,8 @@ namespace ActionTrakingSystem.Controllers
                     s.clusterTitle,
                     //s.reportAttahced,
                     //s.reportName,
+                    s.actionClosedBy,
+                    s.actionClosedTitle,
                 }).ToList();
 
                 var obj = new
@@ -552,7 +565,8 @@ namespace ActionTrakingSystem.Controllers
                                      join ds in _context.IATrackingDaysStatus on iat.dayStatus equals ds.iatDayStatusId into all5
                                      from dsd in all5.DefaultIfEmpty()
                                      join icc in _context.Cluster.Where(a => a.isDeleted == 0 && ((ClusterIds.Count == 0) || ClusterIds.Contains((int)a.clusterId))) on s.clusterId equals icc.clusterId
-
+                                     join uxx in _context.AppUser on iat.actionClosedBy equals uxx.userId into all90
+                                     from uxxx in all90.DefaultIfEmpty()
                                      select new
                                      {
                                          assignedToId = iat.assignedTo == null ? -1 : iat.assignedTo,
@@ -607,6 +621,8 @@ namespace ActionTrakingSystem.Controllers
                                          iat.implementedDate,
                                          //reportAttahced = iatrr.iatFileId == null ? false : true,
                                          //reportName = iatrr.fileName,
+                                         iat.actionClosedBy,
+                                         actionClosedTitle = uxxx.firstName + " " + uxxx.lastName,
                                      }
                  ).Distinct().OrderByDescending(a => a.insurenceActionTrackerId).ToListAsync();
                 var daysToTargetList = tracker.Select(s => new
@@ -659,6 +675,8 @@ namespace ActionTrakingSystem.Controllers
                     s.adminComment,
                     s.sourceId,
                     s.sourceTitle,
+                    s.actionClosedBy,
+                    s.actionClosedTitle
                 }).ToList();
 
                 var obj = new
@@ -692,14 +710,19 @@ namespace ActionTrakingSystem.Controllers
                     if(ins.iatStatusId == 1)
                     {
                         ins.closureDate = DateTime.Now;
+                        ins.actionClosedBy = reg.userId;
                     }
                     else if (ins.iatStatusId == 4)
                     {
                         ins.implementedDate = DateTime.Now;
+                        ins.actionClosedBy = null;
+
                     }
                     else
                     {
                         ins.closureDate = null;
+                        ins.actionClosedBy = null;
+
                     }
                     ins.evidenceAvailableId = reg.insurenceAction?.evidenceAvailableId;
                     ins.calcEvid = reg.insurenceAction.evidenceAvailableScore;
@@ -782,7 +805,6 @@ namespace ActionTrakingSystem.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
         [Authorize]
         [HttpPost("reviewerInsurenceActionTracker")]
         public async Task<IActionResult> StatusTrackerReviewer(AssignInsurenceStatusDto reg)
@@ -811,13 +833,16 @@ namespace ActionTrakingSystem.Controllers
                     if (ins.iatStatusId == 1)
                     {
                         ins.closureDate = DateTime.Now;
+                        ins.actionClosedBy = reg.userId;
                     }
                     else if(ins.iatStatusId == 4)
                     {
                         ins.implementedDate = DateTime.Now;
+                        ins.actionClosedBy = null;
                     }
                     else
                     {
+                        ins.actionClosedBy = null;
                         ins.closureDate = null;
                     }
                     ins.evidenceAvailableId = reg.insurenceAction?.evidenceAvailableId;

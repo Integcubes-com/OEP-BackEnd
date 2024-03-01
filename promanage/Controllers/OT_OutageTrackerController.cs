@@ -208,7 +208,9 @@ namespace ActionTrakingSystem.Controllers
                                       join zz in _context.Cluster on z.clustedId equals zz.clusterId
                                       join r in _context.Regions2 on zz.regionId equals r.regionId
                                       join h in _context.AUSite.Where(a => a.userId == reg.userId) on g.siteId equals h.siteId
-                                      join i in _context.OT_PhaseOutageTracker.Where(a => a.isDeleted == 0) on new { d.phaseId, eq.equipmentId, c.phaseReadId, f.nextOutageDate } equals new { i.phaseId, i.equipmentId, i.phaseReadId, nextOutageDate = i.outageDate } into all
+                                      join i in _context.OT_PhaseOutageTracker.Where(a => a.isDeleted == 0)
+                                                                                      on new { PhaseId = d.phaseId, PhaseReadId = c.phaseReadId, SNOId = f.snoId }
+                                                                                  equals new { PhaseId = i.phaseId, PhaseReadId = i.phaseReadId, SNOId = i.snoId ?? -1 } into all
                                       from ii in all.DefaultIfEmpty()
                                       join j in _context.OT_IStatus on ii.statusId equals j.statusId into all2
                                       from jj in all2.DefaultIfEmpty()
@@ -385,6 +387,7 @@ namespace ActionTrakingSystem.Controllers
                     ot.phaseId = reg.action.outageTracker.phaseId;
                     ot.phaseReadId = reg.action.outageTracker.phaseReadId;
                     ot.outageDate = reg.action.outageTracker.nextOutageDate;
+                    ot.snoId = reg.action.outageTracker.snoId;
                     if (reg.action.outageTracker.notApplicable == true)
                     {
                         ot.notApplicable = 1;

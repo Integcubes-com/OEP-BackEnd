@@ -29,6 +29,8 @@ namespace ActionTrakingSystem.DTOs
         public string priorityList { get; set; }
         public string nomacStatus { get; set; }
         public string insuranceStatus { get; set; }
+        public string yearList { get; set; }
+        public string proactiveList { get; set; }
     }
     public class IRFilter
     {

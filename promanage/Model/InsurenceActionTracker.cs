@@ -36,5 +36,6 @@ namespace ActionTrakingSystem.Model
         public int rework { get; set; }
         public int clusterReviewed { get; set; }
         public DateTime? implementedDate { get; set; }
+        public int? actionClosedBy { get; set; }
     }
 }

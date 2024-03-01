@@ -120,6 +120,9 @@ namespace ActionTrakingSystem.Controllers
                 if (!string.IsNullOrEmpty(reg.siteList))
                     SitesIds = (reg.siteList.Split(',').Select(Int32.Parse).ToList());
 
+                List<int> ProactivesIds = new List<int>();
+                if (!string.IsNullOrEmpty(reg.proactiveList))
+                    ProactivesIds = (reg.proactiveList.Split(',').Select(Int32.Parse).ToList());
 
                 List<int> SourceIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.sourceList))
@@ -136,10 +139,16 @@ namespace ActionTrakingSystem.Controllers
                 List<int> PriorityIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.priorityList))
                     PriorityIds = (reg.priorityList.Split(',').Select(Int32.Parse).ToList());
+                List<string> YearIds = new List<string>();
+                if (!string.IsNullOrEmpty(reg.yearList))
+                    YearIds = (reg.yearList.Split(',').ToList());
 
-                var reommendations = await (from ir in _context.InsuranceRecommendations.Where(a => a.isDeleted == 0 && ((SitesIds.Count == 0) || SitesIds.Contains((int)a.siteId)) && ((PriorityIds.Count == 0) || PriorityIds.Contains((int)a.priorityId))
-                                            //&& (reg.filter.startData == null || a.targetDate >= reg.filter.startData) && (reg.filter.endDate == null || a.targetDate <= reg.filter.endDate) 
-                                            && ((SourceIds.Count == 0) || SourceIds.Contains((int)a.sourceId)) && ((NomacIds.Count == 0) || NomacIds.Contains((int)a.nomacStatusId)) && ((InsuranceIds.Count == 0) || InsuranceIds.Contains((int)a.insuranceStatusId)))
+                var reommendations = await (from ir in _context.InsuranceRecommendations
+                                            .Where(
+                                            a => a.isDeleted == 0 
+                                            && ((SitesIds.Count == 0) || SitesIds.Contains((int)a.siteId)) && ((PriorityIds.Count == 0) || PriorityIds.Contains((int)a.priorityId)) && ((YearIds.Count == 0) || YearIds.Contains(a.year))
+                                            && ((SourceIds.Count == 0) || SourceIds.Contains((int)a.sourceId)) && ((NomacIds.Count == 0) || NomacIds.Contains((int)a.nomacStatusId)) && ((InsuranceIds.Count == 0) || InsuranceIds.Contains((int)a.insuranceStatusId))
+                                            )
                                             join s in _context.Sites on ir.siteId equals s.siteId
                                             join stech in _context.SitesTechnology on s.siteId equals stech.siteId
                                             join aus in _context.AUSite.Where(a => a.userId == reg.userId) on s.siteId equals aus.siteId
@@ -184,7 +193,7 @@ namespace ActionTrakingSystem.Controllers
                                                 siteId = ir.siteId,
                                                 ir.significance,
                                                 proactiveReference = ains.proactiveReference,
-                                                proactiveId = ains.proactiveId,
+                                                proactiveId = ains.proactiveId==null?-1: ains.proactiveId,
                                                 proactiveTitle = ains.proactivetitle,
                                                 regionTitle = r.title,
                                                 regionId = r.regionId,
@@ -204,8 +213,8 @@ namespace ActionTrakingSystem.Controllers
 
                 var data = new
                 {
-                    reommendations,
-                   
+                    reommendations = reommendations.Where(a => ProactivesIds.Count == 0 || ProactivesIds.Contains(a.proactiveId)).ToList()
+
                 };
                 return Ok(data);
             }

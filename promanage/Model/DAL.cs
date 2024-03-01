@@ -39,6 +39,7 @@ namespace ActionTrakingSystem.Model
         public DbSet<OT_SiteNextOutages> OT_SiteNextOutages { get; set; }
 
         public DbSet<WH_StartingHours> WH_StartingHours { get; set; }
+        public DbSet<TechnicalEvaluationStatus> TechnicalEvaluationStatus { get; set; }
 
         public DbSet<WH_MonthlyHours> WH_MonthlyHours { get; set; }
 

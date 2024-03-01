@@ -21,7 +21,18 @@ namespace ActionTrakingSystem.DTOs
         public string severityList { get; set; }
         //public tilFilterDto filter { get; set; }
     }
-   public class tilFilterDto
+
+    public class getTilEvaluationDto
+    {
+        public int userId { get; set; }
+        public string statusList { get; set; }
+        public string docTypeList { get; set; }
+        public string statusReviewList { get; set; }
+        public string formList { get; set; }
+        public string focusList { get; set; }
+        public string severityList { get; set; }
+    }
+    public class tilFilterDto
     {
         public DateTime? startDate { get; set; } = null;
         public DateTime? endDate { get; set; } = null;

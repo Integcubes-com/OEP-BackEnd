@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace ActionTrakingSystem.Controllers
 {
@@ -21,17 +22,102 @@ namespace ActionTrakingSystem.Controllers
             _context = context;
         }
         [Authorize]
-        [HttpGet("getReport")]
-        public async Task<IActionResult> GetReports()
+        [HttpPost("getInterfaces")]
+        public async Task<IActionResult> GetInterfaces(UserIdDto rege)
         {
             try
             {
+
+                var timing = await (from a in _context.TILOEMTimimgCode.Where(a => a.isDeleted == 0)
+                                    select new
+                                    {
+                                        a.timingId,
+                                        a.timingCode,
+                                    }).ToListAsync();
+                    var focus = await (from a in _context.TILFocus.Where(a => a.isDeleted == 0)
+                                       select new
+                                       {
+                                           a.focusId,
+                                           a.focusTitle,
+                                       }).ToListAsync();
+                var severity = await (from a in _context.TILOEMSeverity.Where(a => a.isDeleted == 0)
+                                      select new
+                                      {
+                                          a.oemSeverityId,
+                                          a.oemSeverityTitle,
+                                      }).ToListAsync();
+                var status = await (from a in _context.TAStatus.Where(a => a.isDeleted == 0)
+                                    select new
+                                    {
+                                        a.tasId,
+                                        a.title,
+                                    }).ToListAsync();
+                var unit = await (from a in _context.SiteEquipment.Where(a => a.isDeleted == 0)
+                                    select new
+                                    {
+                                        a.equipmentId,
+                                        unit = a.siteUnit,
+                                    }).ToListAsync();
+                var obj = new
+                {
+                    timing,
+                    focus,
+                    severity,
+                    status,
+                    unit
+                };
+
+                return Ok(obj);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+        [Authorize]
+        [HttpPost("getReport")]
+        public async Task<IActionResult> GetReports(TilReportDto rege)
+        {
+            try
+            {
+                List<int> RegionsIds = new List<int>();
+                if (!string.IsNullOrEmpty(rege.regionList))
+                    RegionsIds = (rege.regionList.Split(',').Select(Int32.Parse).ToList());
+                List<int> SiteIds = new List<int>();
+                if (!string.IsNullOrEmpty(rege.siteList))
+                    SiteIds = (rege.siteList.Split(',').Select(Int32.Parse).ToList());
+                List<int> ClusterIds = new List<int>();
+                if (!string.IsNullOrEmpty(rege.clusterList))
+                    ClusterIds = (rege.clusterList.Split(',').Select(Int32.Parse).ToList());
+                List<int> UnitIds = new List<int>();
+                if (!string.IsNullOrEmpty(rege.unitList))
+                    UnitIds = (rege.unitList.Split(',').Select(Int32.Parse).ToList());
+                List<int> StatusIds = new List<int>();
+                if (!string.IsNullOrEmpty(rege.statusList))
+                    StatusIds = (rege.statusList.Split(',').Select(Int32.Parse).ToList());
+                List<int> TimingIds = new List<int>();
+                if (!string.IsNullOrEmpty(rege.timmingList))
+                    TimingIds = (rege.timmingList.Split(',').Select(Int32.Parse).ToList());
+                List<int> FocusIds = new List<int>();
+                if (!string.IsNullOrEmpty(rege.focusList))
+                    FocusIds = (rege.focusList.Split(',').Select(Int32.Parse).ToList());
+                List<int> SeverityIds = new List<int>();
+                if (!string.IsNullOrEmpty(rege.severityList))
+                    SeverityIds = (rege.severityList.Split(',').Select(Int32.Parse).ToList());
                 List<TilActionReportDto> results = new List<TilActionReportDto>();
                 results = await _context.TilActionReportDto.FromSqlRaw(
                "select * from GetActionTrackerDetails()")
                .ToListAsync();
-
-                var groupedBy = results.GroupBy(u => new
+                var filtered = results.Where(a => ((RegionsIds.Count == 0) || RegionsIds.Contains((int)a.regionId))
+                    && ((ClusterIds.Count == 0) || ClusterIds.Contains((int)a.clusterId))
+                    && ((SiteIds.Count == 0) || SiteIds.Contains((int)a.siteId))
+                    && ((UnitIds.Count == 0) || UnitIds.Contains((int)a.unitId))
+                    && ((StatusIds.Count == 0) || StatusIds.Contains((int)a.statusId))
+                    && ((TimingIds.Count == 0) || TimingIds.Contains((int)a.timingId))
+                    && ((FocusIds.Count == 0) || TimingIds.Contains((int)a.focusId))
+                    && ((SeverityIds.Count == 0) || TimingIds.Contains((int)a.severityId))
+                    );
+                var groupedBy = filtered.GroupBy(u => new
                 {
                     u.equipmentId,
                     u.unit,
@@ -53,8 +139,6 @@ namespace ActionTrakingSystem.Controllers
                     clusterId = group.Key.clusterId,
                     clusterTitle = group.Key.clusterTitle,
                     tilNumber = group.Key.tilNumber,
-                    //statusId = group.Select(u => u.statusId).ToList(),
-                    //statusTitle = group.Select(u => u.statusTitle).ToList(),
                     statusId = group.All(u => u.statusId == 3) ? 3 : 2,
                     statusTitle = group.All(u => u.statusTitle == "Closed") ? "Closed" : "Open",
                 }).ToList();

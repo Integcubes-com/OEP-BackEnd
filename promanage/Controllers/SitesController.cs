@@ -389,12 +389,14 @@ namespace ActionTrakingSystem.Controllers
                 List<int> technologyIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.technologyList))
                     technologyIds = (reg.technologyList.Split(',').Select(Int32.Parse).ToList());
+                List<int> clusterIds = new List<int>();
+                if (!string.IsNullOrEmpty(reg.clusterList))
+                    clusterIds = (reg.clusterList.Split(',').Select(Int32.Parse).ToList());
 
                 var sites = await (from s in _context.Sites.Where(a => a.isDeleted == 0)
                                    join ps in _context.SiteProjectStatus on s.projectStatusId equals ps.projectStatusId into all
                                    from aa in all.DefaultIfEmpty()
-                                   join cl in _context.Cluster on s.clusterId equals cl.clusterId into aalz
-                                   from cll in aalz.DefaultIfEmpty()
+                                   join cl in _context.Cluster.Where(a => a.isDeleted == 0 && ((clusterIds.Count == 0) || clusterIds.Contains((int)a.clusterId))) on s.clusterId equals cl.clusterId
                                    join r in _context.Regions.Where(a=>a.isDeleted == 0 && ((RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId))) on s.regionId equals r.regionId 
                                    join c in _context.Country.Where(a => a.isDeleted == 0 && ((countryIds.Count == 0) || countryIds.Contains((int)a.countryId))) on s.countryId equals c.countryId 
                                    join ts in _context.SitesTechnology.Where(a => a.isDeleted == 0 && ((technologyIds.Count == 0) || technologyIds.Contains((int)a.techId))) on s.siteId equals ts.siteId 
@@ -417,7 +419,7 @@ namespace ActionTrakingSystem.Controllers
                                        regionId = s.regionId,
                                        region = r.title,
                                        clusterId = s.clusterId,
-                                       clusterTitle = cll.clusterTitle,
+                                       clusterTitle = cl.clusterTitle,
                                        projectCompany = s.projectCompany,
                                        siteDescription = s.siteDescription,
                                        projectStatusId = aa.projectStatusId,

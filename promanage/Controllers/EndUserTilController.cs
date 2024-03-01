@@ -167,7 +167,7 @@ namespace ActionTrakingSystem.Controllers
         }
         [Authorize]
         [HttpPost("getTilsReport")]
-        public async Task<IActionResult> GetTilPackageReport(EUFilterList reg)
+        public async Task<IActionResult> GetTilReport(EUFilterList reg)
         {
             try
             {
@@ -254,6 +254,8 @@ namespace ActionTrakingSystem.Controllers
                                     join ev in _context.TAEvidence on a.evidenceId equals ev.evidenceId into all7
                                     from _ev in all7.DefaultIfEmpty()
                                     join icc in _context.Cluster.Where(a => a.isDeleted == 0 && ((ClusterIds.Count == 0) || ClusterIds.Contains((int)a.clusterId))) on s.clusterId equals icc.clusterId
+                                    join ot in _context.TILOEMTimimgCode on tils.oemTimimgCodeId equals ot.timingId into all9
+                                    from ff in all9.DefaultIfEmpty()
                                     select new
                                     {
                                         tilNumber = tils.tilNumber,
@@ -319,11 +321,14 @@ namespace ActionTrakingSystem.Controllers
                                         clusterReviewed = a.clusterReviewed == 1 ? true : false,
                                         rework = a.rework == 1 ? true : false,
                                         a.implementedDate,
+                                        ff.timingCode,
+                                        tils.oemTimimgCodeId,
+                                        a.actionClosedBy,
+                                        a.actionClosureDate,
                                     }).Distinct().ToListAsync();
 
                 var actionComplete = action.Where(a => ((FinalImplementationIds.Count == 0) || FinalImplementationIds.Contains((int)a.finalImplementationId)) && ((UnitStatusIds.Count == 0) || UnitStatusIds.Contains((int)a.unitStatusId)))
-                                   //.Where(a => ((statusIds.Count == 0) || statusIds.Contains((int)a.statusId)) && ((sapIds.Count == 0) || sapIds.Contains((int)a.planningId)))
-                                   //&& (a.targetDate >= Convert.ToDateTime(reg.filter.startDate) || reg.filter.startDate == null) && (a.targetDate <= Convert.ToDateTime(reg.filter.endDate) || reg.filter.endDate == null))
+                                   
                                    .Select(a => new {
                                        a.isCompleted,
                                        a.reviewerComment,
@@ -383,10 +388,12 @@ namespace ActionTrakingSystem.Controllers
                     a.actionCategory,
                     a.outageId,
                     a.unitStatus,
-                    
-                    a.evidenceTitle,
+                                       a.timingCode,
+                                       a.oemTimimgCodeId,
+                                       a.evidenceTitle,
                     daysToTarget = DaysToTargetCalculation.NewCalcTil(a.finalImpScore, a.targetDate, a.isCompleted, a.rework),
-                                   
+                                       a.actionClosedBy,
+                                       a.actionClosureDate,
                                    }).ToList();
                 var obj = new
                 {
@@ -401,7 +408,7 @@ namespace ActionTrakingSystem.Controllers
         }
         [Authorize]
         [HttpPost("getTils")]
-        public async Task<IActionResult> GetTilPackage(EUFilterList reg)
+        public async Task<IActionResult> GetTils(EUFilterList reg)
         {
             try
             {                
@@ -453,8 +460,11 @@ namespace ActionTrakingSystem.Controllers
                 if (!string.IsNullOrEmpty(reg.priorityList))
                     PriorityIds = (reg.priorityList.Split(',').Select(Int32.Parse).ToList());
 
-                var action = await (from tap in _context.TILActionPackage.Where(a => a.isDeleted == 0 && ((PriorityIds.Count == 0) || PriorityIds.Contains((int)a.priorityId))
-                                    && ((QuarterIds.Count == 0) || QuarterIds.Contains((int)a.createdOn.Month)))
+                List<int> YearIds = new List<int>();
+                if (!string.IsNullOrEmpty(reg.yearList))
+                    YearIds = (reg.yearList.Split(',').Select(Int32.Parse).ToList());
+
+                var action = await (from tap in _context.TILActionPackage.Where(a => a.isDeleted == 0 && ((PriorityIds.Count == 0) || PriorityIds.Contains((int)a.priorityId)))
                                     join acg in _context.ActionClosureGuidelines on tap.actionClosureGuidelinesId equals acg.acId into allzz2
                                     from bb in allzz2.DefaultIfEmpty()
                                     join outage in _context.OutageTypes on tap.outageId equals outage.outageTypeId into allzz3
@@ -496,6 +506,10 @@ namespace ActionTrakingSystem.Controllers
                                     from _ev in all7.DefaultIfEmpty()
                                     join au in _context.AppUser on a.assignedTo equals au.userId into all8
                                     from auu in all8.DefaultIfEmpty()
+                                    join ot in _context.TILOEMTimimgCode on tils.oemTimimgCodeId equals ot.timingId into all9
+                                    from ff in all9.DefaultIfEmpty()
+                                    join uxx in _context.AppUser on a.actionClosedBy equals uxx.userId into all90
+                                    from uxxx in all90.DefaultIfEmpty()
                                     join icc in _context.Cluster.Where(a => a.isDeleted == 0 && ((ClusterIds.Count == 0) || ClusterIds.Contains((int)a.clusterId))) on s.clusterId equals icc.clusterId
                                     where (s.tilPocId == reg.userId || rege.executiveDirector == reg.userId || rvpp.userId == reg.userId ||cnvpp.userId == reg.userId || cn.executiveDirector == reg.userId ||
                                     (a == null ? -1 : a.assignedTo) == reg.userId || reg.userId == 22 || reg.userId == 1)
@@ -564,8 +578,15 @@ namespace ActionTrakingSystem.Controllers
                                         clusterReviewed = a.clusterReviewed == 1 ? true : false,
                                         rework = a.rework == 1 ? true : false,
                                         a.implementedDate,
+                                        ff.timingCode,
+                                        tils.oemTimimgCodeId,
+                                        tils.tilTitle,
+                                        a.actionClosedBy,
+                                        actionClosedTitle = uxxx.firstName + "" + uxxx.lastName,
+                                        a.actionClosureDate,
                                     }).Distinct().ToListAsync();
-                var actionComplete = action.Where(a=> ((FinalImplementationIds.Count == 0) || FinalImplementationIds.Contains((int)a.finalImplementationId)) && ((UnitStatusIds.Count == 0) || UnitStatusIds.Contains((int)a.unitStatusId)))
+                var actionComplete = action.Where(a=> ((FinalImplementationIds.Count == 0) || FinalImplementationIds.Contains((int)a.finalImplementationId)) && ((UnitStatusIds.Count == 0) || UnitStatusIds.Contains((int)a.unitStatusId))
+                && ((QuarterIds.Count == 0) || QuarterIds.Contains((int)a.targetDate.Month)) && ((YearIds.Count == 0) || YearIds.Contains((int)a.targetDate.Year)))
                     //.Where(a => ((statusIds.Count == 0) || statusIds.Contains((int)a.statusId)) && ((sapIds.Count == 0) || sapIds.Contains((int)a.planningId)))
                 //&& (a.targetDate >= Convert.ToDateTime(reg.filter.startDate) || reg.filter.startDate == null) && (a.targetDate <= Convert.ToDateTime(reg.filter.endDate) || reg.filter.endDate == null))
                     .Select(a => new
@@ -631,7 +652,13 @@ namespace ActionTrakingSystem.Controllers
                         a.evidenceTitle,
                         a.clusterId,
                         a.clusterTitle,
+                        a.timingCode,
+                        a.oemTimimgCodeId,
+                        a.tilTitle,
                         daysToTarget = DaysToTargetCalculation.NewCalcTil(a.finalImpScore, a.targetDate, a.isCompleted, a.rework),
+                        a.actionClosedBy,
+                        a.actionClosedTitle,
+                        a.actionClosureDate,
                     }).ToList();
                 var obj = new
                 {
@@ -750,23 +777,33 @@ namespace ActionTrakingSystem.Controllers
                     if (implmentationScore.score == 1 && til.isCompleted == 1)
                     {
                         til.statusCalculated = 3;
+                        til.actionClosedBy = reg.userId;
+                        til.actionClosureDate = DateTime.Now;
                     }
                     else if (implmentationScore.score == 1 && til.isCompleted == 0)
                     {
                         til.statusCalculated = 5;
+                        til.actionClosedBy =null;
+                        til.implementedDate = DateTime.Now;
                     }
                     else if (til.rework == 1)
                     {
                         til.statusCalculated = 2;
+                        til.actionClosedBy = null;
+                        til.actionClosureDate = null;
                     }
                     else if (implmentationScore.score == 0 || implmentationScore.score == null)
                     {
                         til.statusCalculated = 2;
+                        til.actionClosedBy = null;
+                        til.actionClosureDate = null;
                     }
 
                     else
                     {
                         til.statusCalculated = 4;
+                        til.actionClosedBy = null;
+                        til.actionClosureDate = null;
                     }
 
                     til.modifiedOn = DateTime.Now;
@@ -895,7 +932,6 @@ namespace ActionTrakingSystem.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
         public List<int> QuaterCalc(string quarters)
         {
             List<int> MonthIds = new List<int>();

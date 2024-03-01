@@ -38,7 +38,7 @@ namespace ActionTrakingSystem.DTOs
     public class ProactiveObjListDto
     {
       public ProactiveRiskPreventionDto proactive { get; set; }
-      public  List<ProactivePhaseListDto> projectPhase { get; set; }
+      public  List<ProactivePhaseListDto>? projectPhase { get; set; }
     }
     public class ProactivePhaseListDto
     {

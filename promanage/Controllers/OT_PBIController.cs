@@ -43,7 +43,9 @@ namespace ActionTrakingSystem.Controllers
                                     join ff in _context.OT_ISiteOutages.Where(a => a.isDeleted == 0) on f.outageId equals ff.outageId
                                     join eq in _context.OT_SiteEquipment.Where(a => a.isDeleted == 0) on f.equipmentId equals eq.equipmentId
                                     join g in _context.Sites.Where(a => a.isDeleted == 0 && (a.otValid == 1)) on eq.siteId equals g.siteId
-                                    join i in _context.OT_PhaseOutageTracker.Where(a => a.isDeleted == 0) on new { d.phaseId, eq.equipmentId, c.phaseReadId, f.nextOutageDate } equals new { i.phaseId, i.equipmentId, i.phaseReadId, nextOutageDate = i.outageDate } into all
+                                    join i in _context.OT_PhaseOutageTracker.Where(a => a.isDeleted == 0)
+                                                on new { PhaseId = d.phaseId, PhaseReadId = c.phaseReadId, SNOId = f.snoId }
+                                            equals new { PhaseId = i.phaseId, PhaseReadId = i.phaseReadId, SNOId = i.snoId??-1 } into all
                                     from ii in all.DefaultIfEmpty()
                                     join jik in _context.OT_PhaseOutageTrackerProgress on ii.potId equals jik.potId into allzx
                                     from iizx in allzx.DefaultIfEmpty()

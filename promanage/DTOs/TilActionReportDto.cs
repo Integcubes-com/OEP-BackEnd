@@ -15,7 +15,13 @@ namespace ActionTrakingSystem.DTOs
         public int clusterId { get; set; }
         public string clusterTitle { get; set; }
         public string tilNumber { get; set; }
-
+        public int unitId { get; set; }
+        public int timingId { get; set; }
+        public int focusId { get; set; }
+        public int severityId { get; set; }
+        public string oemSeverityTitle { get; set; }
+        public string timingCode { get; set; }
+        public string focusTitle { get; set; }
     }
     public class TilActionReportDtoList
     {

@@ -72,7 +72,7 @@ namespace ActionTrakingSystem.Model
         }
         public static string CalculateMonths(DateTime? endDate, int? statusId, decimal? calcDate, decimal? calcStatus, decimal? calcEvid)
         {
-            if (calcEvid == 1 && calcStatus == 1)
+            if ((calcEvid == 1 && calcStatus == 1) || statusId == 1)
             {
                 //if (calcDate != 1 && calcEvid != 1 && calcStatus != 1)
                 //{
@@ -161,11 +161,11 @@ namespace ActionTrakingSystem.Model
             {
                 DateTime startDate = DateTime.Now;
                 var TotalDays = endDate.Subtract(startDate).Days;
-                if (rework == true)
-                {
-                    return "Open";
-                }
-                else if (finalImpScore == 1 && isCompleted == true)
+                //if (rework == true)
+                //{
+                //    return "Open";
+                //}
+                 if (finalImpScore == 1 && isCompleted == true)
                 {
                     //else
                     return "Closed";
@@ -173,28 +173,49 @@ namespace ActionTrakingSystem.Model
                 }
                 else if (finalImpScore == 1 && isCompleted == false)
                 {
-                    //else
                     return "Implemented";
 
                 }
-                else
+                else if (startDate > endDate)
                 {
-                    if (startDate > endDate)
-                        return "OverDue";
-                    else
-                    {
-                        if (TotalDays <= 7)
-                            return "Less than a week";
-                        else if (TotalDays <= 30)
-                            return "Less than a Month";
-                        else if (TotalDays <= 180)
-                            return "Less than 6 Month";
-                        //else if (TotalDays < 365)
-                        //    return "Greate than 6 Month";
-                        else
-                            return "NotDue";
-                    }
+                    return "OverDue";
+
                 }
+                else if (TotalDays <= 7)
+                {
+                    return "Less than a week";
+
+                }
+                else if (TotalDays <= 30)
+                {
+                    return "Less than a Month";
+
+                }
+                else if (TotalDays <= 180)
+                {
+                    return "Less than 6 Month";
+
+                }
+                else
+                    return "NotDue";
+                //else
+                //{
+                //    if (startDate > endDate)
+                //        return "OverDue";
+                //    else
+                //    {
+                //        if (TotalDays <= 7)
+                //            return "Less than a week";
+                //        else if (TotalDays <= 30)
+                //            return "Less than a Month";
+                //        else if (TotalDays <= 180)
+                //            return "Less than 6 Month";
+                //        //else if (TotalDays < 365)
+                //        //    return "Greate than 6 Month";
+                //        else
+                //            return "NotDue";
+                //    }
+                //}
             }
             catch (Exception e)
             {

@@ -23,6 +23,8 @@ namespace ActionTrakingSystem.Model
         public int? createdBy { get; set; }
         public DateTime? modifiedDate { get; set; }
         public int? modifiedBy { get; set; }
+        public int? isGroup { get; set; }
+        public string groupedEquipments { get; set; }
 
     }
 }

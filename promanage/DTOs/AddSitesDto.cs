@@ -13,7 +13,9 @@ namespace ActionTrakingSystem.DTOs
         public int userId { get; set; }
         public string regionList { get; set; } 
         public string countryList { get; set; } 
-        public string technologyList { get; set; } 
+        public string technologyList { get; set; }
+        public string clusterList { get; set; }
+
     }
 
     public class sSiteDto

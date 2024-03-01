@@ -30,7 +30,7 @@ namespace ActionTrakingSystem.Controllers
                 {
                     ProactiveRiskPrevention pv = new ProactiveRiskPrevention();
                     pv.proactivetitle = reg.obj.proactive.proactivetitle;
-                    pv.proactiveReference = reg.obj.proactive.proactiveReference;
+                    pv.proactiveReference = reg.obj.proactive.proactiveReference ?? "";
                     pv.criticalityId = reg.obj.proactive.criticalityId;
                     pv.categoryId = reg.obj.proactive.categoryId;
                     pv.exposureId = reg.obj.proactive.exposureId;
@@ -63,7 +63,7 @@ namespace ActionTrakingSystem.Controllers
                     var pv = await (from a in _context.ProactiveRiskPrevention.Where(a => a.proactiveId == reg.obj.proactive.proactiveId)
                                            select a).FirstOrDefaultAsync();
                     pv.proactivetitle = reg.obj.proactive.proactivetitle;
-                    pv.proactiveReference = reg.obj.proactive.proactiveReference;
+                    pv.proactiveReference = reg.obj.proactive.proactiveReference?? "";
                     pv.criticalityId = reg.obj.proactive.criticalityId;
                     pv.categoryId = reg.obj.proactive.categoryId;
                     pv.exposureId = reg.obj.proactive.exposureId;

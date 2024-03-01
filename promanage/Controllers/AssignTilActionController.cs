@@ -35,7 +35,7 @@ namespace ActionTrakingSystem.Controllers
         {
             try
             {
-                var sites = await (from r in _context.Regions.Where(a => a.regionId == reg.regionId)
+                var sites = await (from r in _context.Regions2.Where(a => a.regionId == reg.regionId)
                                    join s in _context.Sites.Where(a => a.isDeleted == 0) on r.regionId equals s.regionId
                                    select new
                                    {
@@ -286,19 +286,23 @@ namespace ActionTrakingSystem.Controllers
             try
             {
                 var equipments = await (from e in _context.SiteEquipment.Where(a => a.isDeleted == 0)
-                                        join s in _context.Sites on e.siteId equals s.siteId
-                                        join r in _context.Regions on s.regionId equals r.regionId
-                                        join stech in _context.SitesTechnology on s.siteId equals stech.siteId
-                                        join aus in _context.AUSite.Where(a => a.userId == reg.userId) on s.siteId equals aus.siteId
-                                        join aut in _context.AUTechnology.Where(a => a.userId == reg.userId) on stech.techId equals aut.technologyId
+                                        join s in _context.Sites on e.siteId equals s.siteId into all
+                                        from ss in all.DefaultIfEmpty()
+                                        join r in _context.Regions2 on ss.region2 equals r.regionId into all2
+                                        from rr in all2.DefaultIfEmpty()
+                                        //join stech in _context.SitesTechnology on s.siteId equals stech.siteId
+                                        //join aus in _context.AUSite.Where(a => a.userId == reg.userId) on s.siteId equals aus.siteId
+                                        //join aut in _context.AUTechnology.Where(a => a.userId == reg.userId) on stech.techId equals aut.technologyId
                                         select new
                                         {
                                             e.equipmentId,
                                             e.siteId,
-                                            unit = e.unit + "-" + s.siteName,
-                                            siteTitle = s.siteName,
-                                            regionId = s.regionId,
-                                            regionTitle = r.title,
+                                            unit = e.unit,
+                                            siteTitle = ss.siteName,
+                                            regionId = ss.regionId,
+                                            regionTitle = rr.title,
+                                            e.isGroup,
+                                            e.groupedEquipments,
                                         }).Distinct().ToListAsync();
                 var priority = await (from tc in _context.TAPPriority.Where(a => a.isDeleted == 0)
                                       select new

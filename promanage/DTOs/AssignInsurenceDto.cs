@@ -77,6 +77,8 @@ namespace ActionTrakingSystem.DTOs
         public string companyList { get; set; }
         public string priorityList { get; set; }
         public string clusterList { get; set; }
+        public string yearList { get; set; }
+        public string issueYearList { get; set; }
     }
     public class iatFileDto
     {

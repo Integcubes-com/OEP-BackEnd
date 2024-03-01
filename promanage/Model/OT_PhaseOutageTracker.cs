@@ -18,5 +18,6 @@ namespace ActionTrakingSystem.Model
         public DateTime? modifiedOn { get; set; }
         public int? modifiedBy { get; set; }
         public int isDeleted { get; set; }
+        public int? snoId { get; set; }
     }
 }
