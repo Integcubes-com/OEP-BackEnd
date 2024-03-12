@@ -43,6 +43,7 @@ namespace ActionTrakingSystem.DTOs
         public string daysList { get; set; }
         public string quarterList { get; set; }
         public string yearList { get; set; }
+        public string equipmentTypeList { get; set; }
 
     }
     public class EndUserFilter

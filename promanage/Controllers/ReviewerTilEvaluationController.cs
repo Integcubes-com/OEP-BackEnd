@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using ActionTrakingSystem.DTOs;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Collections;
 
 namespace ActionTrakingSystem.Controllers
 {
@@ -160,6 +161,8 @@ namespace ActionTrakingSystem.Controllers
                                   from ii in all9.DefaultIfEmpty()
                                   join techEval in _context.TechnicalEvaluation on t.tilId equals techEval.tilId into all12
                                   from nn in all12.DefaultIfEmpty()
+                                  join au in _context.AppUser on nn.createdBy equals au.userId into all123
+                                  from auu in all123.DefaultIfEmpty()
                                   join techEvalStatus in _context.TechnicalEvaluationStatus on nn.status equals techEvalStatus.tesId into all122
                                   from techEvalStatuss in all122.DefaultIfEmpty()
                                   select new
@@ -198,6 +201,8 @@ namespace ActionTrakingSystem.Controllers
                                       t.report,
                                       t.yearOfIssue,
                                       nn.evaluationDate,
+                                      evaluatedById = nn.createdBy,
+                                      evaluatedByTitle = auu.firstName + " " + auu.lastName,
                                       reviewStatus = nn.status==null?3: nn.status,
                                       reviewTitle = techEvalStatuss.title==null? "Not Evaluated" : techEvalStatuss.title,
                                       evaluated = nn.evaluated == null ? false : (nn.evaluated == 1 ? true : false),

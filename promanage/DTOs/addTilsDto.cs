@@ -19,7 +19,7 @@ namespace ActionTrakingSystem.DTOs
         public string formList { get; set; }
         public string focusList { get; set; }
         public string severityList { get; set; }
-        //public tilFilterDto filter { get; set; }
+        public string equipmentList { get; set; }
     }
 
     public class getTilEvaluationDto
@@ -87,5 +87,6 @@ namespace ActionTrakingSystem.DTOs
         public string technicalReviewSummary { get; set; }
         public string implementationNotes { get; set; }
         public string yearOfIssue { get; set; }
+        public int? tbEquipmentId { get; set; }
     }
 }

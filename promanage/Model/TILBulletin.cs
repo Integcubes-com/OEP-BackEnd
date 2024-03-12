@@ -30,6 +30,7 @@ namespace ActionTrakingSystem.Model
         public string yearOfIssue { get; set; }
         public string implementationNotes { get; set; }
         public int isDeleted { get; set; }
+        public int? tbEquipmentId { get; set; }
         public int? createdBy { get; set; }
         public int? modifiedBy { get; set; }
         public DateTime? createdOn { get; set; }

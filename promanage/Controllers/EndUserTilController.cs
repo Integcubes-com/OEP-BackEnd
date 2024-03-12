@@ -34,7 +34,7 @@ namespace ActionTrakingSystem.Controllers
             {
 
                 var list = await (from a in _context.TILActiontrackerFile.Where(a => a.tapId == reg.tapId && a.isDeleted == 0 && a.equipId == reg.equipId)
-                                  join b in _context.TILActionTracker on new { a.tapId , a.equipId } equals new { b.tapId , equipId = b.siteEquipmentId }
+                                  join b in _context.TILActionTracker on new { a.tapId, a.equipId } equals new { b.tapId, equipId = b.siteEquipmentId }
                                   select new
                                   {
                                       tapId = a.tapId,
@@ -100,11 +100,11 @@ namespace ActionTrakingSystem.Controllers
                                       t.partTitle,
                                   }).Distinct().ToListAsync();
                 var outageTypes = await (from t in _context.OutageTypes.Where(a => a.isDeleted == 0)
-                                  select new
-                                  {
-                                      t.outageTypeId,
-                                      t.title,
-                                  }).Distinct().ToListAsync(); 
+                                         select new
+                                         {
+                                             t.outageTypeId,
+                                             t.title,
+                                         }).Distinct().ToListAsync();
 
                 var finalImplementation = await (from t in _context.TAFinalImplementation.Where(a => a.isDeleted == 0)
                                                  select new
@@ -130,12 +130,12 @@ namespace ActionTrakingSystem.Controllers
                                              tc.oemSeverityId,
                                              tc.oemSeverityTitle
                                          }).ToListAsync();
-                //var oemSeverityTiming = await (from tc in _context.TILOEMTimimgCode.Where(a => a.isDeleted == 0)
-                //                               select new
-                //                               {
-                //                                   tc.timingId,
-                //                                   tc.timingCode
-                //                               }).ToListAsync();
+                var tbEquipemnt = await (from tc in _context.TilBulletinEquipment.Where(a => a.isDeleted == 0)
+                                         select new
+                                         {
+                                             tc.tilEquipmentId,
+                                             tc.title,
+                                         }).ToListAsync();
 
                 var tilFocus = await (from tc in _context.TILFocus.Where(a => a.isDeleted == 0)
                                       select new
@@ -156,7 +156,8 @@ namespace ActionTrakingSystem.Controllers
                     statusList,
                     oemSeverity,
                     tilFocus,
-                    outageTypes
+                    outageTypes,
+                    tbEquipemnt
                 };
                 return Ok(obj);
             }
@@ -205,6 +206,9 @@ namespace ActionTrakingSystem.Controllers
                 if (!string.IsNullOrEmpty(reg.daysList))
                     daysIds = (reg.daysList.Split(',').ToList());
 
+                List<int> EquipmentTypeIds = new List<int>();
+                if (!string.IsNullOrEmpty(reg.equipmentTypeList))
+                    EquipmentTypeIds = (reg.equipmentTypeList.Split(',').Select(Int32.Parse).ToList());
 
                 List<int> FocusIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.focusList))
@@ -256,6 +260,8 @@ namespace ActionTrakingSystem.Controllers
                                     join icc in _context.Cluster.Where(a => a.isDeleted == 0 && ((ClusterIds.Count == 0) || ClusterIds.Contains((int)a.clusterId))) on s.clusterId equals icc.clusterId
                                     join ot in _context.TILOEMTimimgCode on tils.oemTimimgCodeId equals ot.timingId into all9
                                     from ff in all9.DefaultIfEmpty()
+                                    join tbe in _context.TilBulletinEquipment on tils.tbEquipmentId equals tbe.tilEquipmentId into all1222
+                                    from tbee in all1222.DefaultIfEmpty()
                                     select new
                                     {
                                         tilNumber = tils.tilNumber,
@@ -286,7 +292,7 @@ namespace ActionTrakingSystem.Controllers
                                         budgetTitle = _b.budgetName,
                                         partServiceId = a.partsServiceId,
                                         partServiceTitle = _ps.partTitle,
-                                        planningId = a.sapPlanningId== null?-1: a.sapPlanningId,
+                                        planningId = a.sapPlanningId == null ? -1 : a.sapPlanningId,
                                         planningTitle = _sap.sapPlanningTitle,
                                         finalImplementationTitle =
                                         _fi.finalImpTitle,
@@ -312,7 +318,7 @@ namespace ActionTrakingSystem.Controllers
                                         actionCategory = bb.title,
                                         tap.outageId,
                                         unitStatus = cc.title,
-                                        unitStatusId = cc.outageTypeId==null?-1: cc.outageTypeId,
+                                        unitStatusId = cc.outageTypeId == null ? -1 : cc.outageTypeId,
                                         evidenceTitle = _ev.evidenceTitle == null ? "No" : _ev.evidenceTitle,
                                         icc.clusterId,
                                         icc.clusterTitle,
@@ -325,35 +331,38 @@ namespace ActionTrakingSystem.Controllers
                                         tils.oemTimimgCodeId,
                                         a.actionClosedBy,
                                         a.actionClosureDate,
+                                        tbEquipmentId = tils.tbEquipmentId == null ? -1 : tils.tbEquipmentId,
+                                        tbTitle = tbee.title,
                                     }).Distinct().ToListAsync();
 
-                var actionComplete = action.Where(a => ((FinalImplementationIds.Count == 0) || FinalImplementationIds.Contains((int)a.finalImplementationId)) && ((UnitStatusIds.Count == 0) || UnitStatusIds.Contains((int)a.unitStatusId)))
-                                   
-                                   .Select(a => new {
+                var actionComplete = action.Where(a =>((EquipmentTypeIds.Count == 0) || EquipmentTypeIds.Contains((int)a.tbEquipmentId)) && ((FinalImplementationIds.Count == 0) || FinalImplementationIds.Contains((int)a.finalImplementationId)) && ((UnitStatusIds.Count == 0) || UnitStatusIds.Contains((int)a.unitStatusId)))
+
+                                   .Select(a => new
+                                   {
                                        a.isCompleted,
                                        a.reviewerComment,
                                        a.clusterReviewed,
                                        a.implementedDate,
                                        a.rework,
                                        a.packageId,
-                    a.tapTitle,
-                    a.tapDescription,
-                    a.actionDescription,
+                                       a.tapTitle,
+                                       a.tapDescription,
+                                       a.actionDescription,
                                        statusId = DaysToTargetCalculation.CalculateStatusId(a.finalImpScore, a.isCompleted, a.rework),
                                        statustitle = DaysToTargetCalculation.CalculateStatusTitle(a.finalImpScore, a.isCompleted, a.rework),
                                        a.tilActionTrackerId,
-                    a.tapId,
-                    a.tilAction,
-                    a.siteEquipmentId,
-                    a.siteEquipmentTitle,
-                    a.tilDescription,
-                    a.budgetSourceId,
-                    a.budgetSourceTitle,
-                    a.statusCalculated,
-                    a.siteStatusDetail,
-                    a.budgetId,
-                    a.budgetTitle,
-                    a.partServiceId,
+                                       a.tapId,
+                                       a.tilAction,
+                                       a.siteEquipmentId,
+                                       a.siteEquipmentTitle,
+                                       a.tilDescription,
+                                       a.budgetSourceId,
+                                       a.budgetSourceTitle,
+                                       a.statusCalculated,
+                                       a.siteStatusDetail,
+                                       a.budgetId,
+                                       a.budgetTitle,
+                                       a.partServiceId,
                                        a.adminComment,
 
                                        a.clusterId,
@@ -363,37 +372,39 @@ namespace ActionTrakingSystem.Controllers
                                        a.oemSeverityId,
                                        a.oemSeverityTitle,
                                        a.partServiceTitle,
-                    a.planningId,
-                    a.tilNumber,
-                    a.planningTitle,
-                    a.finalImplementationTitle,
-                    a.finalImplementationId,
-                    a.targetDate,
-                    a.priorityId,
-                    a.priorityTitle,
-                    a.calStatus,
-                    a.calcPriority,
-                    a.budgetCalc,
-                    a.ddtCalc,
-                    a.evidenceCalc,
-                    a.implementationCalc,
-                    a.partsCalc,
-                    a.sapCalc,
-                    a.regionId,
-                    a.regionTitle,
-                    a.siteId,
-                    a.siteTitle,
-                    a.evidenceId,
-                    a.actionClosureGuidelinesId,
-                    a.actionCategory,
-                    a.outageId,
-                    a.unitStatus,
+                                       a.planningId,
+                                       a.tilNumber,
+                                       a.planningTitle,
+                                       a.finalImplementationTitle,
+                                       a.finalImplementationId,
+                                       a.targetDate,
+                                       a.priorityId,
+                                       a.priorityTitle,
+                                       a.calStatus,
+                                       a.calcPriority,
+                                       a.budgetCalc,
+                                       a.ddtCalc,
+                                       a.evidenceCalc,
+                                       a.implementationCalc,
+                                       a.partsCalc,
+                                       a.sapCalc,
+                                       a.regionId,
+                                       a.regionTitle,
+                                       a.siteId,
+                                       a.siteTitle,
+                                       a.evidenceId,
+                                       a.actionClosureGuidelinesId,
+                                       a.actionCategory,
+                                       a.outageId,
+                                       a.unitStatus,
                                        a.timingCode,
                                        a.oemTimimgCodeId,
                                        a.evidenceTitle,
-                    daysToTarget = DaysToTargetCalculation.NewCalcTil(a.finalImpScore, a.targetDate, a.isCompleted, a.rework),
+                                       daysToTarget = DaysToTargetCalculation.NewCalcTil(a.finalImpScore, a.targetDate, a.isCompleted, a.rework),
                                        a.actionClosedBy,
                                        a.actionClosureDate,
+                                       a.tbEquipmentId,
+                                       a.tbTitle ,
                                    }).ToList();
                 var obj = new
                 {
@@ -411,7 +422,12 @@ namespace ActionTrakingSystem.Controllers
         public async Task<IActionResult> GetTils(EUFilterList reg)
         {
             try
-            {                
+            {
+
+                List<int> EquipmentTypeIds = new List<int>();
+                if (!string.IsNullOrEmpty(reg.equipmentTypeList))
+                    EquipmentTypeIds = (reg.equipmentTypeList.Split(',').Select(Int32.Parse).ToList());
+
                 List<int> RegionIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.regionList))
                     RegionIds = (reg.regionList.Split(',').Select(Int32.Parse).ToList());
@@ -438,8 +454,8 @@ namespace ActionTrakingSystem.Controllers
                 List<int> sapIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.sapList))
                     sapIds = (reg.sapList.Split(',').Select(Int32.Parse).ToList());
-                
-                
+
+
                 List<int> statusIds = new List<int>();
                 if (!string.IsNullOrEmpty(reg.statusList))
                     statusIds = (reg.statusList.Split(',').Select(Int32.Parse).ToList());
@@ -472,20 +488,20 @@ namespace ActionTrakingSystem.Controllers
                                     join tapeq in _context.TAPEquipment on tap.packageId equals tapeq.tapId
                                     join az in _context.TILActionTracker on new { tap.packageId, tapeq.eqId } equals new { packageId = az.tapId, eqId = az.siteEquipmentId } into allz
                                     from a in allz.DefaultIfEmpty()
-                                    join tils in _context.TILBulletin.Where(a=>(a.isDeleted == 0)&&((FocusIds.Count == 0) || FocusIds.Contains((int)a.focusId)) && ((SeveruityIds.Count == 0) || SeveruityIds.Contains((int)a.oemSeverityId))) on tap.tilId equals tils.tilId
+                                    join tils in _context.TILBulletin.Where(a => (a.isDeleted == 0) && ((FocusIds.Count == 0) || FocusIds.Contains((int)a.focusId)) && ((SeveruityIds.Count == 0) || SeveruityIds.Contains((int)a.oemSeverityId))) on tap.tilId equals tils.tilId
                                     join f in _context.TILFocus on tils.focusId equals f.focusId into all42
                                     from dd in all42.DefaultIfEmpty()
                                     join os in _context.TILOEMSeverity on tils.oemSeverityId equals os.oemSeverityId into all52
                                     from ee in all52.DefaultIfEmpty()
                                     join se in _context.SiteEquipment.Where(a => a.isDeleted == 0 && (equipmentIds.Count == 0) || equipmentIds.Contains((int)a.equipmentId)) on tapeq.eqId equals se.equipmentId
-                                    join s in _context.Sites.Where(a => a.isDeleted == 0 &&  (SitesIds.Count == 0) || SitesIds.Contains((int)a.siteId)) on se.siteId equals s.siteId
+                                    join s in _context.Sites.Where(a => a.isDeleted == 0 && (SitesIds.Count == 0) || SitesIds.Contains((int)a.siteId)) on se.siteId equals s.siteId
                                     join stech in _context.SitesTechnology on s.siteId equals stech.siteId
                                     join aus in _context.AUSite.Where(a => a.userId == reg.userId) on s.siteId equals aus.siteId
                                     join aut in _context.AUTechnology.Where(a => a.userId == reg.userId) on stech.techId equals aut.technologyId
                                     join cn in _context.Country on s.countryId equals cn.countryId
                                     join cnvp in _context.CountryExecutiveVp on cn.countryId equals cnvp.countryId into allcn
                                     from cnvpp in allcn.DefaultIfEmpty()
-                                    join rege in _context.Regions2.Where(a =>a.isDeleted == 0 && (RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId)) on s.region2 equals rege.regionId
+                                    join rege in _context.Regions2.Where(a => a.isDeleted == 0 && (RegionIds.Count == 0) || RegionIds.Contains((int)a.regionId)) on s.region2 equals rege.regionId
                                     join rvp in _context.RegionsExecutiveVp on rege.regionId equals rvp.regionId into allrege
                                     from rvpp in allrege.DefaultIfEmpty()
                                     join bs in _context.TAPBudgetSource on tap.budgetSourceId equals bs.budgetSourceId into all
@@ -510,8 +526,10 @@ namespace ActionTrakingSystem.Controllers
                                     from ff in all9.DefaultIfEmpty()
                                     join uxx in _context.AppUser on a.actionClosedBy equals uxx.userId into all90
                                     from uxxx in all90.DefaultIfEmpty()
+                                    join tbe in _context.TilBulletinEquipment on tils.tbEquipmentId equals tbe.tilEquipmentId into all1222
+                                    from tbee in all1222.DefaultIfEmpty()
                                     join icc in _context.Cluster.Where(a => a.isDeleted == 0 && ((ClusterIds.Count == 0) || ClusterIds.Contains((int)a.clusterId))) on s.clusterId equals icc.clusterId
-                                    where (s.tilPocId == reg.userId || rege.executiveDirector == reg.userId || rvpp.userId == reg.userId ||cnvpp.userId == reg.userId || cn.executiveDirector == reg.userId ||
+                                    where (s.tilPocId == reg.userId || rege.executiveDirector == reg.userId || rvpp.userId == reg.userId || cnvpp.userId == reg.userId || cn.executiveDirector == reg.userId ||
                                     (a == null ? -1 : a.assignedTo) == reg.userId || reg.userId == 22 || reg.userId == 1)
                                     select new
                                     {
@@ -543,12 +561,12 @@ namespace ActionTrakingSystem.Controllers
                                         planningTitle = _sap.sapPlanningTitle,
                                         finalImplementationTitle =
                                         _fi.finalImpTitle,
-                                        finalImpScore = _fi.score == null?0: _fi.score,
+                                        finalImpScore = _fi.score == null ? 0 : _fi.score,
                                         tils.focusId,
                                         dd.focusTitle,
                                         tils.oemSeverityId,
                                         ee.oemSeverityTitle,
-                                        finalImplementationId = a.finalImplementationId == null?-1: a.finalImplementationId,
+                                        finalImplementationId = a.finalImplementationId == null ? -1 : a.finalImplementationId,
                                         targetDate = a.targetDate == null ? tap.createdOn.AddDays(30) : a.targetDate,
                                         priorityId = tap.priorityId,
                                         priorityTitle = _p.priorityTitle,
@@ -569,8 +587,8 @@ namespace ActionTrakingSystem.Controllers
                                         actionCategory = bb.title,
                                         tap.outageId,
                                         unitStatus = cc.title,
-                                        unitStatusId = cc.outageTypeId==null?-1: cc.outageTypeId,
-                                        evidenceTitle = _ev.evidenceTitle == null?"No": _ev.evidenceTitle,
+                                        unitStatusId = cc.outageTypeId == null ? -1 : cc.outageTypeId,
+                                        evidenceTitle = _ev.evidenceTitle == null ? "No" : _ev.evidenceTitle,
                                         icc.clusterId,
                                         icc.clusterTitle,
                                         isCompleted = a.isCompleted == 1 ? true : false,
@@ -584,11 +602,13 @@ namespace ActionTrakingSystem.Controllers
                                         a.actionClosedBy,
                                         actionClosedTitle = uxxx.firstName + "" + uxxx.lastName,
                                         a.actionClosureDate,
+                                        tbEquipmentId = tils.tbEquipmentId == null ? -1 : tils.tbEquipmentId,
+                                        tbTitle = tbee.title,
                                     }).Distinct().ToListAsync();
-                var actionComplete = action.Where(a=> ((FinalImplementationIds.Count == 0) || FinalImplementationIds.Contains((int)a.finalImplementationId)) && ((UnitStatusIds.Count == 0) || UnitStatusIds.Contains((int)a.unitStatusId))
+                var actionComplete = action.Where(a => ((EquipmentTypeIds.Count == 0) || EquipmentTypeIds.Contains((int)a.tbEquipmentId)) && ((FinalImplementationIds.Count == 0) || FinalImplementationIds.Contains((int)a.finalImplementationId)) && ((UnitStatusIds.Count == 0) || UnitStatusIds.Contains((int)a.unitStatusId))
                 && ((QuarterIds.Count == 0) || QuarterIds.Contains((int)a.targetDate.Month)) && ((YearIds.Count == 0) || YearIds.Contains((int)a.targetDate.Year)))
                     //.Where(a => ((statusIds.Count == 0) || statusIds.Contains((int)a.statusId)) && ((sapIds.Count == 0) || sapIds.Contains((int)a.planningId)))
-                //&& (a.targetDate >= Convert.ToDateTime(reg.filter.startDate) || reg.filter.startDate == null) && (a.targetDate <= Convert.ToDateTime(reg.filter.endDate) || reg.filter.endDate == null))
+                    //&& (a.targetDate >= Convert.ToDateTime(reg.filter.startDate) || reg.filter.startDate == null) && (a.targetDate <= Convert.ToDateTime(reg.filter.endDate) || reg.filter.endDate == null))
                     .Select(a => new
                     {
                         a.isCompleted,
@@ -659,6 +679,8 @@ namespace ActionTrakingSystem.Controllers
                         a.actionClosedBy,
                         a.actionClosedTitle,
                         a.actionClosureDate,
+                        a.tbEquipmentId,
+                        a.tbTitle,
                     }).ToList();
                 var obj = new
                 {
@@ -689,7 +711,7 @@ namespace ActionTrakingSystem.Controllers
                     til.adminComment = reg.action.adminComment;
                     til.partsServiceId = reg.action.partServiceId == null ? -1 : reg.action.partServiceId ?? -1;
                     til.tapId = (int)reg.action.tapId;
-                    til.finalImplementationId = reg.action.finalImplementationId == null ? -1: reg.action.finalImplementationId ?? -1;
+                    til.finalImplementationId = reg.action.finalImplementationId == null ? -1 : reg.action.finalImplementationId ?? -1;
                     til.evidenceId = reg.action.evidenceId == null ? -1 : reg.action.evidenceId ?? -1;
                     til.sapPlanningId = reg.action.planningId == null ? -1 : reg.action.planningId ?? -1;
                     til.targetDate = reg.action.targetDate;
@@ -749,7 +771,7 @@ namespace ActionTrakingSystem.Controllers
                     {
                         til.sapCalc = "0%";
                     }
-                    if (reg.action.priorityId != null && reg.action.priorityId != -1 )
+                    if (reg.action.priorityId != null && reg.action.priorityId != -1)
                     {
                         priorityScore = (from b in _context.TAPPriority.Where(a => a.priorityId == reg.action.priorityId)
                                          select b).FirstOrDefault();
@@ -783,7 +805,7 @@ namespace ActionTrakingSystem.Controllers
                     else if (implmentationScore.score == 1 && til.isCompleted == 0)
                     {
                         til.statusCalculated = 5;
-                        til.actionClosedBy =null;
+                        til.actionClosedBy = null;
                         til.implementedDate = DateTime.Now;
                     }
                     else if (til.rework == 1)
@@ -816,13 +838,13 @@ namespace ActionTrakingSystem.Controllers
                 {
                     TILActionTracker til = new TILActionTracker();
                     til.siteStatusDetail = reg.action.siteStatusDetail;
-                    til.partsServiceId = reg.action.partServiceId == null? -1 : reg.action.partServiceId?? -1;
+                    til.partsServiceId = reg.action.partServiceId == null ? -1 : reg.action.partServiceId ?? -1;
                     til.tapId = (int)reg.action.tapId;
                     til.adminComment = reg.action.adminComment;
                     til.isCompleted = 0;
                     til.rework = 0;
                     til.clusterReviewed = 0;
-                    til.finalImplementationId = reg.action.finalImplementationId == null ? -1 : reg.action.finalImplementationId??-1;
+                    til.finalImplementationId = reg.action.finalImplementationId == null ? -1 : reg.action.finalImplementationId ?? -1;
                     til.evidenceId = reg.action.evidenceId == null ? -1 : reg.action.evidenceId;
                     til.sapPlanningId = reg.action.planningId == null ? -1 : reg.action.planningId;
                     til.targetDate = reg.action.targetDate;
@@ -841,29 +863,29 @@ namespace ActionTrakingSystem.Controllers
                     if (til.budgetId != null && til.budgetId != -1)
                     {
                         budgetScore = (from b in _context.TABudget.Where(a => a.budgetId == til.budgetId)
-                                           select b).FirstOrDefault();
+                                       select b).FirstOrDefault();
                         til.budgetCalc = (budgetScore.score * 100).ToString() + "%";
                     }
                     else
                     {
                         til.budgetCalc = "0%";
                     }
-                    if(til.finalImplementationId != null && til.finalImplementationId != -1)
+                    if (til.finalImplementationId != null && til.finalImplementationId != -1)
                     {
                         implmentationScore = (from b in _context.TAFinalImplementation.Where(a => a.finalImpId == til.finalImplementationId)
-                                                  select b).FirstOrDefault();
+                                              select b).FirstOrDefault();
                         til.implementationCalc = (implmentationScore.score * 100).ToString() + "%";
                     }
                     else
                     {
                         til.implementationCalc = "0%";
                     }
-                   
 
-                   if(til.partsServiceId != null && til.partsServiceId != -1)
+
+                    if (til.partsServiceId != null && til.partsServiceId != -1)
                     {
                         partScore = (from b in _context.TAParts.Where(a => a.partId == til.partsServiceId)
-                                         select b).FirstOrDefault();
+                                     select b).FirstOrDefault();
                         til.partsCalc = (partScore.score * 100).ToString() + "%";
                     }
                     else
@@ -874,17 +896,17 @@ namespace ActionTrakingSystem.Controllers
                     if (til.sapPlanningId != null && til.sapPlanningId != -1)
                     {
                         sapScore = (from b in _context.TASapPlanning.Where(a => a.sapPlanningId == til.sapPlanningId)
-                                        select b).FirstOrDefault();
+                                    select b).FirstOrDefault();
                         til.sapCalc = (sapScore.score * 100).ToString() + "%";
                     }
                     else
                     {
                         til.sapCalc = "0%";
                     }
-                    if(reg.action.priorityId != null && reg.action.priorityId != -1)
+                    if (reg.action.priorityId != null && reg.action.priorityId != -1)
                     {
                         priorityScore = (from b in _context.TAPPriority.Where(a => a.priorityId == reg.action.priorityId)
-                                             select b).FirstOrDefault();
+                                         select b).FirstOrDefault();
                         til.calcPriority = (priorityScore.score * 100);
                     }
                     else
@@ -894,7 +916,7 @@ namespace ActionTrakingSystem.Controllers
                     if (til.evidenceId != null && til.evidenceId != -1)
                     {
                         evidenceScore = (from b in _context.TAEvidence.Where(a => a.evidenceId == til.evidenceId)
-                                             select b).FirstOrDefault();
+                                         select b).FirstOrDefault();
                         til.evidenceCalc = (evidenceScore.score * 100).ToString() + "%";
                     }
                     else
@@ -904,7 +926,7 @@ namespace ActionTrakingSystem.Controllers
                     }
 
                     til.calStatus = (((budgetScore.score + implmentationScore.score + partScore.score + sapScore.score + evidenceScore.score) / 5) * 100).ToString() + "%";
-                 
+
                     if (implmentationScore.score == 1)
                     {
                         til.statusCalculated = 5;
@@ -913,12 +935,12 @@ namespace ActionTrakingSystem.Controllers
                     {
                         til.statusCalculated = 2;
                     }
-                  
+
                     else
                     {
                         til.statusCalculated = 4;
                     }
-                 
+
                     til.createdOn = DateTime.Now;
                     til.createdBy = reg.userId;
                     _context.Add(til);

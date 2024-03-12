@@ -127,7 +127,10 @@ namespace ActionTrakingSystem.Controllers
                     u.regionTitle,
                     u.clusterId,
                     u.clusterTitle,
-                    u.tilNumber
+                    u.tilNumber,
+                    u.focusTitle,
+                    u.timingCode,
+                    u.oemSeverityTitle,
                 }).Select(group => new 
                 {
                     equipmentId = group.Key.equipmentId,
@@ -139,6 +142,9 @@ namespace ActionTrakingSystem.Controllers
                     clusterId = group.Key.clusterId,
                     clusterTitle = group.Key.clusterTitle,
                     tilNumber = group.Key.tilNumber,
+                    focusTitle = group.Key.focusTitle,
+                    timingCode = group.Key.timingCode,
+                    oemSeverityTitle = group.Key.oemSeverityTitle,
                     statusId = group.All(u => u.statusId == 3) ? 3 : 2,
                     statusTitle = group.All(u => u.statusTitle == "Closed") ? "Closed" : "Open",
                 }).ToList();

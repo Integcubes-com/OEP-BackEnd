@@ -63,7 +63,7 @@ namespace ActionTrakingSystem.Controllers
                     til.oemSeverityId = reg.til.oemSeverityId;
                     til.focusId = reg.til.tilFocusId;
                     til.dateReceivedNomac = reg.til.dateReceivedNomac;
-                    til.dateIssuedDocument =reg.til.dateIssuedDocument;
+                    til.dateIssuedDocument = reg.til.dateIssuedDocument;
                     til.currentRevision = reg.til.currentRevision;
                     til.documentTypeId = reg.til.documentTypeId;
                     til.sourceId = reg.til.sourceId;
@@ -77,6 +77,7 @@ namespace ActionTrakingSystem.Controllers
                     til.implementationNotes = reg.til.implementationNotes;
                     til.createdBy = reg.userId;
                     til.createdOn = DateTime.Now;
+                    til.tbEquipmentId = reg.til.tbEquipmentId;
                     _context.Add(til);
                     _context.SaveChanges();
                     reg.til.tilId = til.tilId;
@@ -108,6 +109,7 @@ namespace ActionTrakingSystem.Controllers
                     til.report = reg.til.report;
                     til.yearOfIssue = reg.til.yearOfIssue;
                     til.implementationNotes = reg.til.implementationNotes;
+                    til.tbEquipmentId = reg.til.tbEquipmentId;
                     til.modifiedBy = reg.userId;
                     til.modifiedOn = DateTime.Now;
                     _context.SaveChanges();
@@ -254,6 +256,13 @@ namespace ActionTrakingSystem.Controllers
                                            tc.sourceId,
                                            tc.sourceTitle
                                        }).ToListAsync();
+
+                var tbEquipemnt = await (from tc in _context.TilBulletinEquipment.Where(a => a.isDeleted == 0)
+                                         select new
+                                         {
+                                             tc.tilEquipmentId,
+                                             tc.title,
+                                         }).ToListAsync();
                 var obj = new
                 {
                     tilComponent,
@@ -265,6 +274,7 @@ namespace ActionTrakingSystem.Controllers
                     reviewStatus,
                     tilSite,
                     tilSource,
+                    tbEquipemnt
                 };
                 return Ok(obj);
             }
@@ -288,6 +298,10 @@ namespace ActionTrakingSystem.Controllers
                 if (!string.IsNullOrEmpty(rege.statusList))
                     StausIds = (rege.statusList.Split(',').Select(Int32.Parse).ToList());
 
+                List<int> EquipmentIds = new List<int>();
+                if (!string.IsNullOrEmpty(rege.equipmentList))
+                    EquipmentIds = (rege.equipmentList.Split(',').Select(Int32.Parse).ToList());
+
 
                 List<int> FormIds = new List<int>();
                 if (!string.IsNullOrEmpty(rege.formList))
@@ -301,7 +315,7 @@ namespace ActionTrakingSystem.Controllers
                 if (!string.IsNullOrEmpty(rege.severityList))
                     SeveruityIds = (rege.severityList.Split(',').Select(Int32.Parse).ToList());
 
-                var tils = await (from t in _context.TILBulletin.Where(a => a.isDeleted == 0  && ((DocIds.Count == 0) || DocIds.Contains((int)a.documentTypeId)) && ((FormIds.Count == 0) || FormIds.Contains((int)a.reviewForumId)) && ((StausIds.Count == 0) || StausIds.Contains((int)a.reviewStatusId)) && ((FocusIds.Count == 0) || FocusIds.Contains((int)a.focusId)) && ((SeveruityIds.Count == 0) || SeveruityIds.Contains((int)a.oemSeverityId)))
+                var tils = await (from t in _context.TILBulletin.Where(a => a.isDeleted == 0 && ((DocIds.Count == 0) || DocIds.Contains((int)a.documentTypeId)) && ((FormIds.Count == 0) || FormIds.Contains((int)a.reviewForumId)) && ((StausIds.Count == 0) || StausIds.Contains((int)a.reviewStatusId)) && ((FocusIds.Count == 0) || FocusIds.Contains((int)a.focusId)) && ((SeveruityIds.Count == 0) || SeveruityIds.Contains((int)a.oemSeverityId)))
                                   join c in _context.TILComponent on t.componentId equals c.componentId into all
                                   from aa in all.DefaultIfEmpty()
                                   join d in _context.TILDocumentType on t.documentTypeId equals d.typeId into all2
@@ -322,6 +336,8 @@ namespace ActionTrakingSystem.Controllers
                                   from nn in all12.DefaultIfEmpty()
                                   join fff in _context.TILBulletinFile on t.tilId equals fff.tilId into all122
                                   from nnn in all122.DefaultIfEmpty()
+                                  join tbe in _context.TilBulletinEquipment on t.tbEquipmentId equals tbe.tilEquipmentId into all1222
+                                  from tbee in all1222.DefaultIfEmpty()
                                   select new
                                   {
                                       t.tilId,
@@ -359,11 +375,13 @@ namespace ActionTrakingSystem.Controllers
                                       t.yearOfIssue,
                                       reportAttahced = nnn.tbfId == null ? false : true,
                                       reportName = nnn.reportName,
+                                      tbEquipmentId =  t.tbEquipmentId == null? -1: t.tbEquipmentId,
+                                      tbTitle = tbee.title,
                                   }).OrderByDescending(a => a.tilId).ToListAsync();
 
                 var obj = new
                 {
-                    tils,
+                    tils = tils.Where(a => (EquipmentIds.Count == 0) || EquipmentIds.Contains((int)a.tbEquipmentId)).ToList()
                 };
                 return Ok(obj);
             }
